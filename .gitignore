@@ -48,3 +48,11 @@ public/uploads/*
 .zcode/
 DEPLOY.md
 deploy/
+
+# Local tools, inspection output, offline preparation and generated runtime
+/.agents/
+/skills-lock.json
+/.local-tools/
+/.taste-skill/
+/scripts/quantize-*.py
+/public/recommendation-runtime/

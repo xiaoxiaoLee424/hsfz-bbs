@@ -1,0 +1,11 @@
+{
+  "model": "BAAI/bge-small-zh-v1.5",
+  "version": "bge-small-zh-v1.5-q4-v1",
+  "dimensions": 512,
+  "maxTokens": 256,
+  "pooling": "CLS, L2 normalized",
+  "quantization": "INT4 HQQ MatMul block-64; INT8 row-wise embeddings",
+  "bytes": 19211227,
+  "sha256": "93d4a2378fbf0ab9d396e85a244bc8ae4ec14364a88ab4835f32da82e1903fbf",
+  "license": "MIT"
+}

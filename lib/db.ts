@@ -1,3 +1,4 @@
+import { initializeRecommendations, loadRecommendationExtension } from "./recommendation/schema";
 import Database from "better-sqlite3";
 import bcrypt from "bcryptjs";
 import fs from "node:fs";
@@ -14,6 +15,7 @@ const g = globalThis as unknown as { __bbsDb?: Database.Database };
 export const db = g.__bbsDb ?? new Database(path.join(DATA_DIR, "bbs.db"));
 g.__bbsDb = db;
 
+loadRecommendationExtension(db);
 db.pragma("journal_mode = WAL");
 
 db.exec(`
@@ -745,3 +747,5 @@ export function userPostCount(userId: number): number {
     )
     .get(userId, userId) as { n: number }).n;
 }
+
+initializeRecommendations(db);

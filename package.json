@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test tests/recommendations.test.cjs",
+    "prebuild": "node scripts/prepare-recommendations.mjs",
+    "predev": "node scripts/prepare-recommendations.mjs",
+    "recommendations:refresh": "node --experimental-strip-types scripts/refresh-recommendations.mts",
+    "recommendations:worker": "node --experimental-strip-types scripts/refresh-recommendations.mts --watch"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -19,15 +24,18 @@
     "rehype-katex": "^7.0.1",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "sqlite-vec": "0.1.9"
   },
   "devDependencies": {
+    "@huggingface/transformers": "3.8.1",
     "@tailwindcss/turbopack": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "qrcode": "^1.5.4",

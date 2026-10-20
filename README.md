@@ -55,3 +55,7 @@
 ---
 
 本项目基于 [MIT License](LICENSE) 开源。
+
+## Experimental recommendations
+
+Signed-in users can opt into recommendations from **实验功能** in the account menu. BGE-small-zh-v1.5 uses 512-dimensional normalized embeddings and a 19.21 MB local quantized model. Encoding, personal profiles and ranking run in the browser because deployment server specifications are unknown and to reduce server load; server work stays in SQLite. All inference scripts, tokenizer, model and WASM are served from the application origin. See [recommendation operations](docs/recommendations.md) for the refresh worker and deployment limits.

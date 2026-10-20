@@ -1,3 +1,6 @@
+import { recommendationsEnabled } from "@/lib/experiments";
+import { ThreadSignals } from "@/components/recommendation/ThreadSignals";
+import { MODEL_VERSION } from "@/lib/recommendation/config";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -45,6 +48,9 @@ export default async function ThreadPage({
 
   db.prepare("UPDATE threads SET views = views + 1 WHERE id = ?").run(tid);
   const replies = threadReplies(tid);
+  const enabled = recommendationsEnabled(user.id);
+  const vectorRow = enabled ? db.prepare("SELECT embedding FROM post_vectors WHERE post_id=? AND model_version=?").get(tid,MODEL_VERSION) as {embedding:Buffer}|undefined : undefined;
+
   let postImages: string[] = [];
   try {
     postImages = thread.images ? (JSON.parse(thread.images) as string[]) : [];
@@ -82,6 +88,7 @@ export default async function ThreadPage({
 
   return (
     <div className="mx-auto max-w-4xl">
+      {enabled && <ThreadSignals userId={user.id} postId={tid} board={thread.board_id} title={thread.title} content={thread.content.slice(0,500)} vector={vectorRow?.embedding.toString("base64")} liked={liked} favorite={faved} replied={replies.some(reply=>reply.username===user.username)} />}
       <nav className="mb-3 flex items-center gap-1.5 text-xs text-muted">
         <Link href="/" className="hover:text-brand">
           首页

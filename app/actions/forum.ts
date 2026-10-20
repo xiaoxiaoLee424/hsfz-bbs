@@ -1,5 +1,7 @@
 "use server";
 
+import { recommendationsEnabled } from "@/lib/experiments";
+import { parseEmbedding, saveEmbedding } from "@/lib/recommendation/store";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -40,6 +42,9 @@ export async function createThreadAction(
 
   const sensitive = findSensitiveWord(`${title}\n${content}`);
   if (sensitive) return fail(`内容包含敏感词「${sensitive}」，请修改后重发`);
+  let vector: ReturnType<typeof parseEmbedding>;
+  try { vector = recommendationsEnabled(user.id) ? parseEmbedding(formData.get("post_vec"),formData.get("vec_model_version")) : null; }
+  catch (error) { return fail(error instanceof Error ? error.message : "推荐特征无效"); }
   const rate = allowAction(`thread:${user.id}`, 60_000);
   if (!rate.ok) return fail(`发帖太频繁啦，请 ${rate.retryAfterSec} 秒后再试`);
 
@@ -58,6 +63,7 @@ export async function createThreadAction(
   // 匿名发表：仅表白墙板块支持
   const anonymous = formData.get("anonymous") === "on" && board.slug === "confession" ? 1 : 0;
 
+  const newThreadId = db.transaction(() => {
   const info = db
     .prepare(
       `INSERT INTO threads (board_id, author_id, title, content, images, anonymous, created_at, last_reply_at)
@@ -73,7 +79,10 @@ export async function createThreadAction(
       nowStr(),
       nowStr()
     );
-  const newThreadId = Number(info.lastInsertRowid);
+  const id = Number(info.lastInsertRowid);
+  if (vector) saveEmbedding(db,id,vector);
+  return id;
+  })();
   // 匿名帖不发送 @提及通知，避免暴露作者
   if (!anonymous) {
     mentionUserIds(content, user.id).forEach((uid) =>

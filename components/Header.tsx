@@ -88,6 +88,7 @@ export default async function Header() {
                 <Link href={`/u/${user.username}`} className="block px-3 py-2 hover:bg-soft">
                   个人主页
                 </Link>
+                <Link href="/experimental" className="block px-3 py-2 hover:bg-soft">实验功能</Link>
                 <Link href="/settings" className="block px-3 py-2 hover:bg-soft">
                   账号设置
                 </Link>

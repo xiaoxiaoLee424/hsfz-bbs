@@ -42,7 +42,7 @@ export function ThreadRowItem({
   showBoard?: boolean;
 }) {
   return (
-    <div className="px-4 py-3 transition-colors hover:bg-soft/60">
+    <div className="thread-row min-w-0 px-4 py-3 transition-colors hover:bg-soft/60">
       <div className="flex items-center gap-2">
         {t.is_pinned === 1 && (
           <span className="pill shrink-0 bg-red-500/10 text-red-600 dark:text-red-400">置顶</span>
@@ -52,7 +52,7 @@ export function ThreadRowItem({
         )}
         <Link
           href={`/t/${t.id}`}
-          className="truncate font-medium text-ink hover:text-brand hover:underline"
+          className="thread-title min-w-0 truncate font-medium text-ink hover:text-brand hover:underline"
         >
           {t.title}
         </Link>

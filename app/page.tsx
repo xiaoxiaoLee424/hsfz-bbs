@@ -1,3 +1,5 @@
+import { recommendationsEnabled } from "@/lib/experiments";
+import { RecommendedFeed } from "@/components/recommendation/RecommendedFeed";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { allBoards, latestThreads, hotThreads, siteStats, threadsSorted, announcementThreads } from "@/lib/queries";
@@ -29,8 +31,10 @@ export default async function HomePage({
   searchParams: Promise<{ sort?: string }>;
 }) {
   const { sort: sortParam } = await searchParams;
-  const sort = SORTS.some((s) => s.key === sortParam) ? (sortParam as string) : "latest";
   const user = await getCurrentUser();
+  const enabled = !!user && recommendationsEnabled(user.id);
+  const sorts = [...(enabled ? [{key:"recommended",label:"为你推荐"}] : []), ...SORTS];
+  const sort = sorts.some(s=>s.key===sortParam) ? sortParam! : enabled ? "recommended" : "latest";
   const boards = allBoards();
   const grouped = CAT_ORDER.map((cat) => ({ cat, items: boards.filter((b) => b.category === cat) })).filter(
     (g) => g.items.length
@@ -90,8 +94,8 @@ export default async function HomePage({
           </div>
           {user ? (
             <>
-              <div className="flex gap-2 border-b border-line px-4 py-2 text-xs">
-                {SORTS.map((s) => (
+              <div className="flex gap-2 overflow-x-auto whitespace-nowrap border-b border-line px-4 py-2 text-xs">
+                {sorts.map((s) => (
                   <Link
                     key={s.key}
                     href={`/?sort=${s.key}`}
@@ -103,7 +107,7 @@ export default async function HomePage({
                   </Link>
                 ))}
               </div>
-              <ThreadList threads={threads} />
+              {enabled && user && sort === "recommended" ? <RecommendedFeed userId={user.id} boards={boards.map(({id,name})=>({id,name}))} fallback={<ThreadList threads={threads} />} /> : <ThreadList threads={threads} />}
             </>
           ) : (
             <div className="px-4 py-10 text-center">

@@ -26,12 +26,34 @@ export function NewThreadForm({
   boards,
   defaultBoardId,
   isAdmin,
+  recommendationEnabled,
 }: {
   boards: BoardRow[];
   defaultBoardId?: number;
   isAdmin: boolean;
+  recommendationEnabled: boolean;
 }) {
-  const [state, formAction] = useActionState<ActionState, FormData>(createThreadAction, null);
+  const [preparing, setPreparing] = useState(false);
+  const [encodingNotice, setEncodingNotice] = useState("");
+  const cachedVector = useRef<{text:string;encoded:string;version:string} | null>(null);
+  const [state, formAction] = useActionState<ActionState, FormData>(async (previous, form) => {
+    const title = String(form.get("title") ?? ""), body = String(form.get("content") ?? "");
+    // Server validation remains authoritative; do not download a model for an empty draft.
+    if (recommendationEnabled && title.trim().length>=2 && body.trim().length>=2) {
+      setPreparing(true);setEncodingNotice("");
+      try {
+        const text = `${title.trim()}\n${body.trim()}`;
+        if (cachedVector.current?.text !== text) {
+          const { encodePost } = await import("@/lib/recommendation/encoder");
+          cachedVector.current = {text,...await encodePost(title,body)};
+        }
+        form.set("post_vec",cachedVector.current.encoded);
+        form.set("vec_model_version",cachedVector.current.version);
+      } catch { setEncodingNotice("推荐准备暂不可用，帖子仍会正常发布。"); }
+      finally { setPreparing(false); }
+    }
+    return createThreadAction(previous,form);
+  }, null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const [content, setContent] = useState("");
   const [preview, setPreview] = useState(false);
@@ -81,6 +103,7 @@ export function NewThreadForm({
 
   return (
     <form action={formAction} className="space-y-4 p-4">
+      {(preparing || encodingNotice) && <p className="text-sm text-muted" role="status">{preparing ? "正在准备发布，首次使用需要下载推荐组件…" : encodingNotice}</p>}
       {state && !state.ok && (
         <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
           {state.message}
