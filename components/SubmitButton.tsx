@@ -2,23 +2,18 @@
 
 import { useFormStatus } from "react-dom";
 import { useEffect, useRef, useState } from "react";
+import { ActionIcon, type ActionIconName } from "./ActionIcon";
 
-/** 表单提交按钮：提交中自动禁用并显示等待文案 */
-export function SubmitButton({
-  children,
-  className = "btn-primary",
-  pendingText = "处理中…",
-}: {
-  children: React.ReactNode;
-  className?: string;
-  pendingText?: string;
+/** Icon actions retain an accessible name and announce pending work. */
+export function SubmitButton({ children, className = "btn-primary", pendingText = "处理中…", icon, label, active, count }: {
+  children: React.ReactNode; className?: string; pendingText?: string; icon?: ActionIconName; label?: string; active?: boolean; count?: number;
 }) {
   const { pending } = useFormStatus();
-  return (
-    <button type="submit" disabled={pending} className={`${className} disabled:cursor-not-allowed disabled:opacity-60`}>
-      {pending ? pendingText : children}
-    </button>
-  );
+  const name = label ?? (typeof children === "string" ? children.trim() : undefined);
+  return <button type="submit" disabled={pending} aria-label={pending ? `${name ?? ""}，${pendingText}` : name} title={name} aria-busy={pending} aria-pressed={active}
+    className={`${className} ${icon ? "icon-button" : ""} disabled:cursor-not-allowed disabled:opacity-60`}>
+    {icon ? <><ActionIcon name={pending ? "spinner" : icon} active={active} />{count !== undefined && <span aria-hidden="true">{count}</span>}<span className="sr-only" role="status">{pending ? pendingText : name}</span></> : pending ? pendingText : children}
+  </button>;
 }
 
 /**
@@ -30,11 +25,13 @@ export function ConfirmSubmit({
   className = "btn-xs",
   message,
   confirmText = "确认执行？",
+  icon,
 }: {
   children: React.ReactNode;
   className?: string;
   message?: string;
   confirmText?: string;
+  icon?: ActionIconName;
 }) {
   const [armed, setArmed] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -42,20 +39,22 @@ export function ConfirmSubmit({
   useEffect(() => () => clearTimeout(timer.current), []);
 
   return armed ? (
-    <button type="submit" title={message} className={`${className} !border-red-400 !bg-red-500/10 !text-red-600 dark:!text-red-400`}>
+    <button type="submit" title={message} aria-label={`${confirmText} ${typeof children === "string" ? children : ""}`} className={`${className} !border-red-400 !bg-red-500/10 !text-red-600 dark:!text-red-400`}>
       {confirmText}
     </button>
   ) : (
     <button
       type="button"
-      title={message}
-      className={className}
-      onClick={() => {
+      title={message ?? (typeof children === "string" ? children.trim() : undefined)}
+      aria-label={typeof children === "string" ? children.trim() : message}
+      className={`${className} ${icon ? "icon-button" : ""}`}
+      onClick={event => {
+        event.preventDefault();
         setArmed(true);
         timer.current = setTimeout(() => setArmed(false), 3000);
       }}
     >
-      {children}
+      {icon ? <ActionIcon name={icon} /> : children}
     </button>
   );
 }
