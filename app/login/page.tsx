@@ -32,8 +32,8 @@ export default async function LoginPage({
       {registered && (
         <div className="mb-4 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-700 dark:text-emerald-400">
           {fast
-            ? "🎉 校友名单验证通过，账号已直接开通！现在即可登录。"
-            : "✅ 注册申请已提交！账号需要管理员审核通过后才能登录，请耐心等待。"}
+            ? " 校友名单验证通过，账号已直接开通！现在即可登录。"
+            : " 注册申请已提交！账号需要管理员审核通过后才能登录，请耐心等待。"}
         </div>
       )}
 

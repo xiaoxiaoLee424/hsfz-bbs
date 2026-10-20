@@ -1,3 +1,4 @@
+import { IconButton } from "@/components/IconAction";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { searchThreads } from "@/lib/queries";
@@ -18,7 +19,7 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-lg font-semibold">🔍 搜索</h1>
+      <h1 className="text-lg font-semibold">搜索</h1>
       <form action="/search" className="card flex gap-2 p-3">
         <input
           name="q"
@@ -27,9 +28,7 @@ export default async function SearchPage({
           placeholder="搜索帖子标题与正文…"
           autoFocus
         />
-        <button type="submit" className="btn-primary shrink-0">
-          搜索
-        </button>
+        <IconButton type="submit" className="btn-primary" icon="search" label="搜索帖子" />
       </form>
 
       {query && (

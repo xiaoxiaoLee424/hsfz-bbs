@@ -10,7 +10,7 @@ export function TitleBadge({
   if (customTitle) {
     return (
       <span className="pill border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400">
-        🏅 {customTitle}
+         {customTitle}
       </span>
     );
   }

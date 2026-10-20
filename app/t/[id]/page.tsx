@@ -1,3 +1,5 @@
+import { IconButton, IconLink } from "@/components/IconAction";
+import { ScrollRow } from "@/components/ScrollRow";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -6,7 +8,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Avatar } from "@/components/Avatar";
 import { TitleBadge } from "@/components/TitleBadge";
 import { SubmitButton, ConfirmSubmit } from "@/components/SubmitButton";
-import { IconHeart, IconStar, IconComment, IconEye } from "@/components/icons";
+import { IconComment, IconEye } from "@/components/icons";
 import { timeAgo, fmtNum } from "@/lib/format";
 import {
   toggleLikeAction,
@@ -88,7 +90,7 @@ export default async function ThreadPage({
         </Link>
         <span>/</span>
         <Link href={`/b/${thread.slug}`} className="hover:text-brand">
-          {thread.board_icon} {thread.board_name}
+          {thread.board_name}
         </Link>
       </nav>
 
@@ -173,77 +175,73 @@ export default async function ThreadPage({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-2.5">
+        <ScrollRow role="group" aria-label="帖子操作" className="gap-2 border-t border-line px-4 py-2.5">
           {user ? (
             <form action={toggleLikeAction}>
               <input type="hidden" name="thread_id" value={thread.id} />
-              <SubmitButton
+              <SubmitButton icon="heart" active={liked} label={`${liked ? "取消点赞" : "点赞"}，${likeCount} 人点赞`} count={likeCount}
                 className={`btn !border-red-500/30 !bg-red-500/10 !text-red-600 dark:!text-red-400 ${liked ? "" : "opacity-80"}`}
                 pendingText="…"
               >
-                <IconHeart filled={liked} /> {liked ? "已赞" : "点赞"} · {likeCount}
+                点赞
               </SubmitButton>
             </form>
           ) : (
-            <Link href="/login" className="btn">
-              <IconHeart /> 点赞 · {likeCount}
-            </Link>
+            <IconLink href="/login" icon="heart" label={`登录后点赞，${likeCount} 人点赞`} />
           )}
           {user ? (
             <form action={toggleFavoriteAction}>
               <input type="hidden" name="thread_id" value={thread.id} />
-              <SubmitButton
+              <SubmitButton icon="star" active={faved} label={faved ? "取消收藏" : "收藏"}
                 className={`btn !border-amber-500/30 !bg-amber-500/10 !text-amber-600 dark:!text-amber-400 ${faved ? "" : "opacity-80"}`}
                 pendingText="…"
               >
-                <IconStar filled={faved} /> {faved ? "已收藏" : "收藏"}
+                收藏
               </SubmitButton>
             </form>
           ) : (
-            <Link href="/login" className="btn">
-              <IconStar /> 收藏
-            </Link>
+            <IconLink href="/login" icon="star" label="登录后收藏" />
           )}
 
           {user && user.id === thread.author_id && (
             <form action={deleteOwnThreadAction} className={isAdmin ? "" : "ml-auto"}>
               <input type="hidden" name="thread_id" value={thread.id} />
-              <ConfirmSubmit
+              <ConfirmSubmit icon="trash"
                 className="btn-danger"
                 message="确定删除这篇帖子？回复与图片将一并删除，且不可恢复。"
                 confirmText="确认删除？"
               >
-                删除
+                  删除
               </ConfirmSubmit>
             </form>
           )}
 
           {isAdmin && (
-            <span className="ml-auto flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="ml-auto flex items-center gap-1.5 text-xs">
               <form action={togglePinAction}>
                 <input type="hidden" name="thread_id" value={thread.id} />
-                <button type="submit" className="btn-xs">{thread.is_pinned === 1 ? "取消置顶" : "置顶"}</button>
+                <IconButton type="submit" icon={thread.is_pinned ? "pin-off" : "pin"} label={thread.is_pinned ? "取消置顶" : "置顶"} active={!!thread.is_pinned} />
               </form>
               <form action={toggleFeatureAction}>
                 <input type="hidden" name="thread_id" value={thread.id} />
-                <button type="submit" className="btn-xs">{thread.is_featured === 1 ? "取消精华" : "加精"}</button>
+                <IconButton type="submit" icon="award" label={thread.is_featured ? "取消精华" : "加精"} active={!!thread.is_featured} />
               </form>
               <form action={deleteThreadAction}>
                 <input type="hidden" name="thread_id" value={thread.id} />
-                <ConfirmSubmit className="btn-danger" message="确定删除该帖子及全部回复？此操作不可恢复。">
+                <ConfirmSubmit icon="trash" className="btn-danger" message="确定删除该帖子及全部回复？此操作不可恢复。">
                   删除
                 </ConfirmSubmit>
               </form>
             </span>
           )}
-        </div>
+        </ScrollRow>
       </article>
 
       {/* 回复列表 */}
-      <section className="card mt-4">
-        <div className="card-header">💬 全部回复（{replies.length}）</div>
+      <section id="replies" className="card mt-4">
+        <div className="card-header">全部回复（{replies.length}）</div>
         {replies.length === 0 ? (
-          <p className="px-4 py-10 text-center text-muted">还没有回复，抢个沙发？</p>
+          <p className="px-4 py-6 text-center text-muted">还没有回复，抢个沙发？</p>
         ) : (
           <ol className="divide-y divide-line">
             {replies.map((r, i) => (
@@ -273,7 +271,7 @@ export default async function ThreadPage({
                     if (!ref) return null;
                     return (
                       <div className="mb-2 rounded-md border-l-4 border-brand/50 bg-soft/70 px-3 py-1.5 text-xs text-muted">
-                        回复 <span className="font-semibold text-brand">@{ref.nickname}</span> 的 #{ref.floor}{" "}
+                       回复 <span className="font-semibold text-brand">@{ref.nickname}</span>的 #{ref.floor}{" "}
                         楼：
                         <span className="ml-1">
                           {ref.content.slice(0, 60)}
@@ -326,7 +324,7 @@ export default async function ThreadPage({
           <ReplyForm threadId={thread.id} nickname={user.nickname} quote={quote} />
         ) : (
           <div className="card mt-4 p-6 text-center text-sm text-muted">
-            🔒 「{thread.board_name}」是年级群，仅限{thread.grade_lock}同学回复
+             「{thread.board_name}」是年级群，仅限{thread.grade_lock}同学回复
             {user.grade ? `（你当前是${user.grade}）` : "（你还未填写年级）"}
             ，可在{" "}
             <Link href="/settings" className="link">
@@ -337,13 +335,9 @@ export default async function ThreadPage({
         )
       ) : (
         <div className="card mt-4 p-6 text-center text-sm text-muted">
-          <Link href="/login" className="btn-primary mr-2">
-            登录
-          </Link>
+          <IconLink href="/login" className="btn-primary mr-2" icon="login" label="登录" />
           或
-          <Link href="/register" className="btn ml-2">
-            注册
-          </Link>
+          <IconLink href="/register" className="btn ml-2" icon="user-plus" label="注册" />
           后参与回复
         </div>
       )}

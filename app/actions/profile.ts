@@ -72,7 +72,7 @@ export async function uploadAvatarAction(
 
   const name = `${crypto.randomBytes(8).toString("hex")}.${ext}`;
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-  fs.writeFileSync(path.join(UPLOAD_DIR, name), Buffer.from(await file.arrayBuffer()));
+  fs.writeFileSync(path.join(/* turbopackIgnore: true */ UPLOAD_DIR, name), Buffer.from(await file.arrayBuffer()));
 
   db.prepare("UPDATE users SET avatar = ? WHERE id = ?").run(`/uploads/${name}`, user.id);
   revalidatePath("/", "layout");

@@ -49,6 +49,10 @@ export function hotThreads(limit = 5): ThreadRow[] {
   );
 }
 
+export function featuredThreads(limit = 25): ThreadRow[] {
+  return rows(`${THREAD_SELECT} WHERE t.is_featured = 1 ORDER BY t.created_at DESC LIMIT ?`, limit);
+}
+
 export function searchThreads(q: string): ThreadRow[] {
   const like = `%${q}%`;
   return rows(`${THREAD_SELECT} WHERE t.title LIKE ? OR t.content LIKE ? ORDER BY t.created_at DESC LIMIT 50`, like, like);

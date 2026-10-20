@@ -87,7 +87,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           <label className="mb-1.5 block text-sm font-medium">补充回复</label>
           <textarea name="content" required rows={3} className="input resize-y" placeholder="继续补充信息或追问…" />
           <div className="mt-3 flex justify-end">
-            <SubmitButton>↩︎ 发送</SubmitButton>
+            <SubmitButton icon="send">发送</SubmitButton>
           </div>
         </form>
       )}

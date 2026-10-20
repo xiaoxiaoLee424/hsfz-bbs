@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { allBoards } from "@/lib/queries";
 import { NewThreadForm } from "@/components/NewThreadForm";
@@ -16,13 +17,13 @@ export default async function NewThreadPage({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-4 text-lg font-semibold">✏️ 发布新帖</h1>
+      <h1 className="mb-4 text-lg font-semibold">发布新帖</h1>
       <div className="card">
         <div className="card-header">
           新主题 · 发帖前请阅读{" "}
-          <a href="/b/announcements" className="link">
+          <Link href="/b/announcements" className="link">
             社区公约
-          </a>
+          </Link>
         </div>
         <NewThreadForm boards={boards} defaultBoardId={def?.id} isAdmin={user.role === "admin"} />
       </div>

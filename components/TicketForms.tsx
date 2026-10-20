@@ -18,10 +18,10 @@ export function NewTicketForm() {
         <div>
           <label className="mb-1 block text-sm font-medium">分类</label>
           <select name="category" required defaultValue="suggestion" className="input">
-            <option value="title_request">🎫 头衔申请</option>
-            <option value="suggestion">💡 改进建议</option>
-            <option value="report">🚩 举报</option>
-            <option value="other">💬 其他</option>
+            <option value="title_request">头衔申请</option>
+            <option value="suggestion">改进建议</option>
+            <option value="report">举报</option>
+            <option value="other">其他</option>
           </select>
         </div>
         <div>
@@ -41,7 +41,7 @@ export function NewTicketForm() {
         />
       </div>
       <div className="flex justify-end">
-        <SubmitButton pendingText="提交中…">📨 提交工单</SubmitButton>
+        <SubmitButton icon="send" pendingText="提交中…">提交工单</SubmitButton>
       </div>
     </form>
   );

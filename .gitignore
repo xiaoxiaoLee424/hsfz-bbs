@@ -48,3 +48,13 @@ public/uploads/*
 .zcode/
 DEPLOY.md
 deploy/
+
+# Local agent tools, inspection output and offline model preparation
+/.agents/
+/skills-lock.json
+/.local-tools/
+/.taste-skill/
+/scripts/quantize-*.py
+
+# Generated local browser inference assets
+/public/recommendation-runtime/

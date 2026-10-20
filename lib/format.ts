@@ -32,7 +32,7 @@ export function fmtNum(n: number): string {
 const AVATAR_COLORS = [
   "bg-[#1a7f37]",
   "bg-[#0969da]",
-  "bg-[#8250df]",
+  "bg-[#506b8b]",
   "bg-[#bf3989]",
   "bg-[#bc4c00]",
   "bg-[#0e7490]",
@@ -48,11 +48,11 @@ export function avatarColor(name: string): string {
 export function ticketCategoryName(cat: string): string {
   return (
     {
-      title_request: "🎫 头衔申请",
-      suggestion: "💡 改进建议",
-      report: "🚩 举报",
-      other: "💬 其他",
-    }[cat] ?? "💬 其他"
+      title_request: "头衔申请",
+      suggestion: "改进建议",
+      report: "举报",
+      other: "其他",
+    }[cat] ?? "其他"
   );
 }
 

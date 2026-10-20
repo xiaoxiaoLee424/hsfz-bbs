@@ -22,7 +22,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-lg font-semibold">⚙️ 账号设置</h1>
+      <h1 className="text-lg font-semibold">账号设置</h1>
 
       <div className="card p-4">
         <div className="flex flex-wrap items-center gap-4">
@@ -37,7 +37,7 @@ export default async function SettingsPage() {
           </div>
           {user.avatar && (
             <form action={removeAvatarAction}>
-              <ConfirmSubmit className="btn-danger" message="确定移除当前头像，恢复为默认字母头像？">
+              <ConfirmSubmit icon="trash" className="btn-danger" message="确定移除当前头像，恢复为默认字母头像？">
                 移除头像
               </ConfirmSubmit>
             </form>
@@ -47,15 +47,15 @@ export default async function SettingsPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="card">
-          <div className="card-header">🖼️ 自定义头像</div>
+          <div className="card-header">自定义头像</div>
           <AvatarUploadForm />
         </div>
         <div className="card">
-          <div className="card-header">👤 基本资料</div>
+          <div className="card-header">基本资料</div>
           <ProfileForm nickname={user.nickname} bio={user.bio} grade={user.grade} phone={user.phone} />
         </div>
         <div className="card md:col-span-2">
-          <div className="card-header">🔒 修改密码</div>
+          <div className="card-header">修改密码</div>
           <div className="mx-auto w-full max-w-sm p-4">
             <PasswordForm />
           </div>

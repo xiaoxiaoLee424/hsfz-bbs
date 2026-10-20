@@ -1,3 +1,5 @@
+import { IconButton } from "@/components/IconAction";
+import { ScrollRow } from "@/components/ScrollRow";
 import Link from "next/link";
 import { db, getSetting } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
@@ -73,7 +75,7 @@ export default async function AdminPage({
       id: number; category: string; subject: string; status: string; updated_at: string; user_nickname: string;
     }>;
 
-  const TabLink = ({ name, label, badge }: { name: Tab; label: string; badge?: number }) => (
+  const tabLink = ({ name, label, badge }: { name: Tab; label: string; badge?: number }) => (
     <Link
       href={`/admin?tab=${name}`}
       className={`-mb-px border-b-2 px-1 pb-2 text-sm font-medium ${
@@ -82,7 +84,7 @@ export default async function AdminPage({
     >
       {label}
       {badge ? (
-        <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+        <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-semibold text-white">
           {badge}
         </span>
       ) : null}
@@ -92,23 +94,23 @@ export default async function AdminPage({
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
-        <h1 className="text-lg font-semibold">🛠️ 管理后台</h1>
+        <h1 className="text-lg font-semibold">管理后台</h1>
         <p className="text-xs text-muted">仅管理员可见</p>
       </div>
 
-      <div className="flex gap-5 border-b border-line">
-        <TabLink name="users" label="用户管理" badge={pendingUsers.length} />
-        <TabLink name="threads" label="帖子管理" />
-        <TabLink name="tickets" label="工单处理" />
-        <TabLink name="site" label="站点设置" />
-      </div>
+      <ScrollRow as="nav" aria-label="管理功能" className="gap-5 border-b border-line">
+        {tabLink({ name: "users", label: "用户管理", badge: pendingUsers.length })}
+        {tabLink({ name: "threads", label: "帖子管理" })}
+        {tabLink({ name: "tickets", label: "工单处理" })}
+        {tabLink({ name: "site", label: "站点设置" })}
+      </ScrollRow>
 
       {/* 用户管理 */}
       {tab === "users" && (
         <>
           <div className="card">
             <div className="card-header flex items-center justify-between">
-              <span>🟡 待审核注册（{pendingUsers.length}）</span>
+              <span>待审核注册（{pendingUsers.length}）</span>
             </div>
             {pendingUsers.length === 0 ? (
               <p className="px-4 py-6 text-center text-sm text-muted">暂无待审核的注册申请</p>
@@ -128,15 +130,13 @@ export default async function AdminPage({
                     </span>
                     <form action={approveUserAction}>
                       <input type="hidden" name="user_id" value={u.id} />
-                      <button type="submit" className="btn-xs !border-emerald-500/30 !text-emerald-700 hover:!bg-emerald-500/10 dark:!text-emerald-400">
-                        ✓ 批准
-                      </button>
+                      <IconButton type="submit" className="btn-xs !border-emerald-500/30 !text-emerald-700 hover:!bg-emerald-500/10 dark:!text-emerald-400" icon="check" label="批准注册" />
                     </form>
                     <form action={rejectUserAction} className="flex items-center gap-1">
                       <input type="hidden" name="user_id" value={u.id} />
                       <input name="reason" className="input !w-36 !py-1 !text-xs" placeholder="驳回理由（可空）" />
-                      <ConfirmSubmit className="btn-danger" message="确定驳回该注册申请？驳回后该用户将无法登录。">
-                        ✕ 驳回
+                      <ConfirmSubmit icon="close" className="btn-danger" message="确定驳回该注册申请？驳回后该用户将无法登录。">
+                        驳回
                       </ConfirmSubmit>
                     </form>
                   </li>
@@ -147,7 +147,7 @@ export default async function AdminPage({
 
           <div className="card">
             <div className="card-header flex items-center justify-between">
-              <span>📋 校友名单（免审核注册 · {whitelist.length} 条）</span>
+              <span>校友名单（免审核注册 · {whitelist.length} 条）</span>
             </div>
             <WhitelistImportForm />
             {whitelist.length > 0 && (
@@ -168,8 +168,8 @@ export default async function AdminPage({
                     )}
                     <form action={deleteWhitelistAction}>
                       <input type="hidden" name="whitelist_id" value={w.id} />
-                      <ConfirmSubmit className="btn-danger" message={`确定删除 ${w.real_name} 的名单记录？`}>
-                        删除
+                      <ConfirmSubmit icon="trash" className="btn-danger" message={`确定删除 ${w.real_name} 的名单记录？`}>
+                    删除
                       </ConfirmSubmit>
                     </form>
                   </li>
@@ -179,12 +179,12 @@ export default async function AdminPage({
           </div>
 
           <div className="card">
-            <div className="card-header">🔑 重置用户密码（忘记密码的人工通道）</div>
+            <div className="card-header">重置用户密码（忘记密码的人工通道）</div>
             <AdminResetPasswordForm />
           </div>
 
           <div className="card">
-            <div className="card-header">👥 全部用户（{allUsers.length}）</div>
+            <div className="card-header">全部用户（{allUsers.length}）</div>
             <ul className="divide-y divide-line">
               {allUsers.map((u) => {
                 const pc = userPostCount(u.id);
@@ -213,7 +213,7 @@ export default async function AdminPage({
                         maxLength={16}
                         className="input !w-32 !py-1 !text-xs"
                       />
-                      <button type="submit" className="btn-xs">授予头衔</button>
+                      <IconButton type="submit" icon="award" label="授予头衔" />
                     </form>
                     {u.status === "approved" && u.id !== 1 && u.id !== me.id && (
                       <form action={setAdminRoleAction}>
@@ -234,9 +234,9 @@ export default async function AdminPage({
                       <form action={u.banned === 1 ? unbanUserAction : banUserAction}>
                         <input type="hidden" name="user_id" value={u.id} />
                         {u.banned === 1 ? (
-                          <button type="submit" className="btn-xs">解封</button>
+                          <IconButton type="submit" icon="unlock" label="解封用户" />
                         ) : (
-                          <ConfirmSubmit className="btn-danger" message={`确定封禁 ${u.nickname}？其会话将被立即踢出。`}>
+                          <ConfirmSubmit icon="ban" className="btn-danger" message={`确定封禁 ${u.nickname}？其会话将被立即踢出。`}>
                             封禁
                           </ConfirmSubmit>
                         )}
@@ -261,14 +261,14 @@ export default async function AdminPage({
             </p>
             {getSetting("site_badge") && (
               <form action={removeBadgeAction} className="mt-3">
-                <ConfirmSubmit className="btn-danger" message="确定恢复为默认徽章？">
+                <ConfirmSubmit icon="refresh" className="btn-danger" message="确定恢复为默认徽章？">
                   恢复默认
                 </ConfirmSubmit>
               </form>
             )}
           </div>
           <div className="card">
-            <div className="card-header">🏷️ 上传站点徽章（学校校徽）</div>
+            <div className="card-header">上传站点徽章（学校校徽）</div>
             <BadgeUploadForm />
           </div>
         </div>
@@ -277,7 +277,7 @@ export default async function AdminPage({
       {/* 帖子管理 */}
       {tab === "threads" && (
         <div className="card">
-          <div className="card-header">🗂️ 最近帖子（{threads.length}）</div>
+          <div className="card-header">最近帖子（{threads.length}）</div>
           <ul className="divide-y divide-line">
             {threads.map((t) => (
               <li key={t.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
@@ -300,15 +300,15 @@ export default async function AdminPage({
                 </span>
                 <form action={togglePinAction}>
                   <input type="hidden" name="thread_id" value={t.id} />
-                  <button type="submit" className="btn-xs">{t.is_pinned === 1 ? "取消置顶" : "置顶"}</button>
+                  <IconButton type="submit" icon={t.is_pinned ? "pin-off" : "pin"} label={t.is_pinned ? "取消置顶" : "置顶"} active={!!t.is_pinned} />
                 </form>
                 <form action={toggleFeatureAction}>
                   <input type="hidden" name="thread_id" value={t.id} />
-                  <button type="submit" className="btn-xs">{t.is_featured === 1 ? "取消精华" : "加精"}</button>
+                  <IconButton type="submit" icon="award" label={t.is_featured ? "取消精华" : "加精"} active={!!t.is_featured} />
                 </form>
                 <form action={deleteThreadAction}>
                   <input type="hidden" name="thread_id" value={t.id} />
-                  <ConfirmSubmit className="btn-danger" message="确定删除该帖子及全部回复？此操作不可恢复。">
+                  <ConfirmSubmit icon="trash" className="btn-danger" message="确定删除该帖子及全部回复？此操作不可恢复。">
                     删除
                   </ConfirmSubmit>
                 </form>
@@ -321,7 +321,7 @@ export default async function AdminPage({
       {/* 工单处理 */}
       {tab === "tickets" && (
         <div className="space-y-3">
-          <div className="flex gap-2 text-xs">
+          <ScrollRow as="nav" aria-label="工单状态" className="gap-2 text-xs">
             {[
               { key: "", label: "全部" },
               { key: "open", label: "待处理" },
@@ -338,9 +338,9 @@ export default async function AdminPage({
                 {f.label}
               </Link>
             ))}
-          </div>
+          </ScrollRow>
           <div className="card">
-            <div className="card-header">📨 工单列表（{tickets.length}）</div>
+            <div className="card-header">工单列表（{tickets.length}）</div>
             {tickets.length === 0 ? (
               <p className="px-4 py-10 text-center text-muted">暂无工单</p>
             ) : (

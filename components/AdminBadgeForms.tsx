@@ -50,7 +50,7 @@ export function BadgeUploadForm() {
         支持 JPG / PNG / WEBP / GIF / SVG，≤2MB。建议上传学校官方校徽的方形图片，展示时会按圆形裁剪，全站顶栏与登录页即时生效。
       </p>
       <div className="flex justify-end">
-        <SubmitButton>上传徽章</SubmitButton>
+        <SubmitButton icon="upload">上传徽章</SubmitButton>
       </div>
     </form>
   );

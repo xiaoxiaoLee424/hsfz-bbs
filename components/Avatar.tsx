@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { avatarColor } from "@/lib/format";
+import { useState } from "react";
 
 export function Avatar({
   user,
@@ -12,20 +11,17 @@ export function Avatar({
   size?: number;
   className?: string;
 }) {
-  const [broken, setBroken] = useState(false);
-  // 切换对象或头像地址变化时重置加载状态
-  useEffect(() => setBroken(false), [user.avatar, user.username]);
-
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const style = { width: size, height: size };
-  if (user.avatar && !broken) {
+  if (user.avatar && user.avatar !== failedUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={user.avatar}
         alt={user.nickname}
         loading="lazy"
+        onError={() => setFailedUrl(user.avatar ?? null)}
         style={style}
-        onError={() => setBroken(true)}
         className={`shrink-0 rounded-md border border-line bg-card object-cover ${className}`}
       />
     );
@@ -33,7 +29,7 @@ export function Avatar({
   return (
     <span
       style={style}
-      className={`inline-flex shrink-0 select-none items-center justify-center rounded-md font-semibold text-white ${avatarColor(user.username)} ${className}`}
+      className={`inline-flex shrink-0 select-none items-center justify-center rounded-md font-medium text-brand bg-soft ${className}`}
       aria-hidden
     >
       <span style={{ fontSize: Math.round(size * 0.45), lineHeight: 1 }}>

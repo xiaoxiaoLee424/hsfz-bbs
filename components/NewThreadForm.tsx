@@ -4,23 +4,11 @@ import { useActionState, useRef, useState } from "react";
 import { createThreadAction } from "@/app/actions/forum";
 import type { ActionState } from "@/app/actions/auth";
 import type { BoardRow } from "@/lib/queries";
-import { EmojiPicker } from "./EmojiPicker";
-import { formatEditorSelection, type EditorCommand } from "@/lib/editor";
-import { MarkdownPreview } from "./MarkdownPreview";
+import { MarkdownEditor } from "./MarkdownEditor";
 import { ImagePicker } from "./ImagePicker";
 import { SubmitButton } from "./SubmitButton";
 
 const CAT_ORDER = ["学习成长", "年级群", "生活娱乐", "球友", "游戏", "交易互助", "情感联结", "官方"];
-const CAT_EMOJI: Record<string, string> = {
-  学习成长: "📖",
-  年级群: "🎓",
-  生活娱乐: "🎨",
-  球友: "🏀",
-  游戏: "🎮",
-  交易互助: "🤝",
-  情感联结: "💚",
-  官方: "📢",
-};
 
 export function NewThreadForm({
   boards,
@@ -31,38 +19,10 @@ export function NewThreadForm({
   defaultBoardId?: number;
   isAdmin: boolean;
 }) {
-  const [state, formAction] = useActionState<ActionState, FormData>(createThreadAction, null);
-  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(createThreadAction, null);
+  const imageRef = useRef<HTMLInputElement>(null);
   const [content, setContent] = useState("");
-  const [preview, setPreview] = useState(false);
-
-  const TOOLBAR: Array<{ cmd: EditorCommand; label: string; title: string }> = [
-    { cmd: "bold", label: "B", title: "加粗" },
-    { cmd: "italic", label: "I", title: "斜体" },
-    { cmd: "heading", label: "H", title: "标题" },
-    { cmd: "quote", label: "❝", title: "引用" },
-    { cmd: "list", label: "• 列表", title: "无序列表" },
-    { cmd: "ordered", label: "1. 列表", title: "有序列表" },
-    { cmd: "link", label: "🔗 链接", title: "插入链接" },
-    { cmd: "code", label: "‹›", title: "行内代码" },
-    { cmd: "math", label: "$", title: "行内公式" },
-    { cmd: "display-math", label: "$$", title: "公式块" },
-  ];
-
-  function applyFormat(cmd: EditorCommand) {
-    const el = contentRef.current;
-    if (!el) return;
-    const next = formatEditorSelection(
-      { value: el.value, start: el.selectionStart ?? 0, end: el.selectionEnd ?? 0 },
-      cmd
-    );
-    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
-    setter.call(el, next.value);
-    el.selectionStart = next.start;
-    el.selectionEnd = next.end;
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-    el.focus();
-  }
+  const [title, setTitle] = useState("");
   const visible = isAdmin ? boards : boards.filter((b) => b.slug !== "announcements");
 
   // 两级选择：先大类，再板块
@@ -88,7 +48,7 @@ export function NewThreadForm({
       )}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium">① 选择大类</label>
+          <label className="mb-1 block text-sm font-medium">选择大类</label>
           <select
             value={cat}
             required
@@ -100,13 +60,13 @@ export function NewThreadForm({
             </option>
             {cats.map((c) => (
               <option key={c} value={c}>
-                {CAT_EMOJI[c] ?? ""} {c}
+                {c}
               </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">② 选择板块</label>
+          <label className="mb-1 block text-sm font-medium">选择板块</label>
           <select
             name="board_id"
             value={boardId}
@@ -120,7 +80,7 @@ export function NewThreadForm({
             ) : (
               catBoards.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.icon} {b.name}
+                  {b.name}
                   {b.grade_lock ? `（仅限${b.grade_lock}）` : ""}
                 </option>
               ))
@@ -132,6 +92,8 @@ export function NewThreadForm({
         <label className="mb-1 block text-sm font-medium">标题</label>
         <input
           name="title"
+          value={title}
+          onChange={event => setTitle(event.target.value)}
           required
           minLength={2}
           maxLength={60}
@@ -140,59 +102,9 @@ export function NewThreadForm({
         />
       </div>
       <div>
-        <div className="mb-1 flex items-center justify-between">
-          <label className="block text-sm font-medium">正文</label>
-          <button
-            type="button"
-            onClick={() => setPreview(!preview)}
-            className={`rounded-full px-2.5 py-1 text-xs ${
-              preview ? "bg-brand text-white" : "text-muted hover:bg-soft"
-            }`}
-          >
-            {preview ? "✏️ 继续编辑" : "👁 实时预览"}
-          </button>
-        </div>
-        <div className={`grid gap-3 ${preview ? "md:grid-cols-2" : ""}`}>
-          <div>
-          <div className="mb-1.5 flex flex-wrap items-center gap-1">
-            {TOOLBAR.map((t) => (
-              <button
-                key={t.cmd}
-                type="button"
-                title={t.title}
-                onClick={() => applyFormat(t.cmd)}
-                className="rounded border border-line px-2 py-0.5 text-xs font-semibold text-muted hover:bg-soft hover:text-ink"
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <div className="relative">
-            <textarea
-              ref={contentRef}
-              name="content"
-              required
-              minLength={2}
-              rows={10}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="input resize-y pr-10"
-              placeholder="支持 Markdown · @用户名 · $LaTeX$ 公式"
-            />
-            <div className="absolute right-2 top-2">
-              <EmojiPicker targetRef={contentRef} />
-            </div>
-          </div>
-          </div>
-          {preview && (
-            <div className="input min-h-48 overflow-auto bg-soft/40">
-              <MarkdownPreview content={content} className="text-sm" />
-            </div>
-          )}
-        </div>
-        <p className="mt-1.5 text-xs text-muted">
-          支持 Markdown 语法、@用户名 提及、$LaTeX$ 公式（$x^2$）、表情。请友善发言（遵守社区公约）。
-        </p>
+        <label htmlFor="thread-content" className="mb-1 block text-sm font-medium">正文</label>
+        <MarkdownEditor id="thread-content" value={content} onChange={setContent} required minLength={2} rows={9} disabled={pending} onAttach={() => imageRef.current?.click()} attachmentLabel="上传图片（最多 4 张）" />
+        <p className="mt-1.5 text-xs text-muted">支持 @用户名 提及。请友善发言，遵守社区公约。</p>
       </div>
       {isConfession && (
         <label className="flex cursor-pointer items-center gap-2 rounded-md border border-line bg-soft/60 px-3 py-2.5 text-sm">
@@ -204,14 +116,13 @@ export function NewThreadForm({
         </label>
       )}
       <div>
-        <label className="mb-1 block text-sm font-medium">图片（最多 4 张，自动压缩）</label>
-        <ImagePicker max={4} />
+        <ImagePicker max={4} externalInputRef={imageRef} hideTrigger disabled={pending} />
         <p className="mt-1.5 text-xs text-muted">
-          支持 JPG / PNG / WEBP / GIF，上传前自动压缩，共 4 张以内。
+          点击工具栏的附件图标添加图片，支持 JPG / PNG / WEBP / GIF，最多 4 张，自动压缩。
         </p>
       </div>
       <div className="flex justify-end">
-        <SubmitButton pendingText="发布中…">🚀 发布帖子</SubmitButton>
+        <SubmitButton icon="send" pendingText="发布中…">发布帖子</SubmitButton>
       </div>
     </form>
   );

@@ -1,3 +1,4 @@
+import { IconLink } from "@/components/IconAction";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { boardBySlug, boardThreads } from "@/lib/queries";
@@ -28,10 +29,10 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-semibold">
-                {board.icon} {board.name}
+                {board.name}
               </h1>
               {board.grade_lock && (
-                <span className="pill bg-soft text-muted">🔒 年级群 · 仅限{board.grade_lock}同学发言</span>
+                <span className="pill bg-soft text-muted">年级群 · 仅限{board.grade_lock}同学发言</span>
               )}
             </div>
             <p className="mt-1 text-sm text-muted">{board.description}</p>
@@ -39,9 +40,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
           </div>
           {user ? (
             canPost ? (
-              <Link href={`/new?board=${board.slug}`} className="btn-primary shrink-0">
-                ✏️ 发帖
-              </Link>
+              <IconLink href={`/new?board=${board.slug}`} className="btn-primary" icon="compose" label="发帖" />
             ) : (
               <span className="shrink-0 text-xs text-muted">
                 你当前是{user.grade || "未填写年级"}，仅可浏览；可在
@@ -52,9 +51,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
               </span>
             )
           ) : (
-            <Link href="/login" className="btn shrink-0">
-              登录后发帖
-            </Link>
+            <IconLink href="/login" icon="login" label="登录后发帖" />
           )}
         </div>
       </div>

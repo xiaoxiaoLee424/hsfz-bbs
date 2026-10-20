@@ -69,7 +69,7 @@ export default async function AdminTicketPage({ params }: { params: Promise<{ id
           {ticket.user_custom_title && (
             <>
               {" "}
-              · 当前头衔：<span className="text-amber-600">🏅 {ticket.user_custom_title}</span>
+              · 当前头衔：<span className="text-amber-600"> {ticket.user_custom_title}</span>
             </>
           )}
         </p>
@@ -104,7 +104,7 @@ export default async function AdminTicketPage({ params }: { params: Promise<{ id
             <form action={grantTitleAction} className="card border-amber-500/30 p-4">
               <input type="hidden" name="ticket_id" value={ticket.id} />
               <label className="mb-1.5 block text-sm font-medium">
-                🏅 一键授予头衔（授予后会自动回复对方并标记为已处理）
+                一键授予头衔（授予后会自动回复对方并标记为已处理）
               </label>
               <div className="flex gap-2">
                 <input
@@ -124,7 +124,7 @@ export default async function AdminTicketPage({ params }: { params: Promise<{ id
             <label className="mb-1.5 block text-sm font-medium">以站务组身份回复</label>
             <textarea name="content" required rows={3} className="input resize-y" placeholder="回复该同学…" />
             <div className="mt-3 flex justify-end">
-              <SubmitButton className="btn-primary">↩︎ 回复并标记已处理</SubmitButton>
+              <SubmitButton className="btn-primary">回复并标记已处理</SubmitButton>
             </div>
           </form>
 

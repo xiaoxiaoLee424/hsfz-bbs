@@ -18,7 +18,7 @@ export default async function RegisterPage() {
       </div>
 
       <div className="mb-4 rounded-md border border-brand/20 bg-brand/10 px-3 py-2.5 text-sm text-brand">
-        📌 本论坛采用 <b>注册审核制</b>：提交注册申请后，需等待管理员在后台批准，方可登录发帖。
+        本论坛采用 <b>注册审核制</b>：提交注册申请后，需等待管理员在后台批准，方可登录发帖。
         校友名单内的同学（姓名 + 学号匹配）可<strong>免审核直接开通</strong>，见注册表单下方的免审核通道。
       </div>
 

@@ -77,7 +77,7 @@ export function ProfileForm({
         <textarea name="bio" maxLength={100} rows={3} defaultValue={bio} className="input resize-y" placeholder="介绍一下自己（100 字以内）" />
       </div>
       <div className="flex justify-end">
-        <SubmitButton>保存资料</SubmitButton>
+        <SubmitButton icon="save">保存资料</SubmitButton>
       </div>
     </form>
   );
@@ -101,7 +101,7 @@ export function PasswordForm() {
         <input name="new_password2" type="password" required minLength={6} className="input" placeholder="再输入一次" />
       </div>
       <div className="flex justify-end">
-        <SubmitButton>修改密码</SubmitButton>
+        <SubmitButton icon="key">修改密码</SubmitButton>
       </div>
     </form>
   );
@@ -140,7 +140,7 @@ export function AvatarUploadForm() {
       />
       <p className="text-xs text-muted">支持 JPG / PNG / WEBP / GIF，不超过 2MB，展示时按方形裁剪。</p>
       <div className="flex justify-end">
-        <SubmitButton>上传头像</SubmitButton>
+        <SubmitButton icon="upload">上传头像</SubmitButton>
       </div>
     </form>
   );

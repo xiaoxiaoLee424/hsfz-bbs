@@ -31,7 +31,7 @@ export function WhitelistImportForm() {
         名单内的同学注册时填写匹配的姓名 + 学号即可<strong>免审核直接开通</strong>；每个学号只能使用一次。
       </p>
       <div className="flex justify-end">
-        <SubmitButton>📥 导入名单</SubmitButton>
+        <SubmitButton icon="upload">导入名单</SubmitButton>
       </div>
     </form>
   );
