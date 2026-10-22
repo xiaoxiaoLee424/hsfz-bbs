@@ -355,7 +355,7 @@ function ensureGradeBoards() {
     ["北京", "pumc", "北京协和医学院", "🩺"],
     ["北京", "cfa", "外交学院", "🕊️"],
     // 上海
-    ["上海", "fudan", "复旦大学", "📕"],
+    ["上海", "fudan", "复旦大学", "🥚"],
     ["上海", "sjtu", "上海交通大学", "🚄"],
     ["上海", "tongji", "同济大学", "🌉"],
     ["上海", "ecnu", "华东师范大学", "🌸"],
@@ -483,6 +483,11 @@ function ensureGradeBoards() {
   if (!db.prepare("SELECT 1 FROM settings WHERE key = 'board_icon_sysu_duck'").get()) {
     db.prepare("UPDATE boards SET icon = ? WHERE slug = 'sysu'").run("🦆");
     db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('board_icon_sysu_duck', '1')").run();
+  }
+
+  if (!db.prepare("SELECT 1 FROM settings WHERE key = 'board_icon_fudan_egg'").get()) {
+    db.prepare("UPDATE boards SET icon = ? WHERE slug = 'fudan'").run("🥚");
+    db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('board_icon_fudan_egg', '1')").run();
   }
 
   // 游戏分区：游戏讨论
