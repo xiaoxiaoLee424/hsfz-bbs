@@ -233,3 +233,25 @@ body {
   --fg: var(--fg-page);
   --mut: var(--mut-page);
 }
+
+/* ============ 首页投稿横幅：自动横向滚动 ============ */
+@keyframes hsfz-banner-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.banner-track {
+  display: flex;
+  width: max-content;
+  animation-name: hsfz-banner-marquee;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+.banner-strip:hover .banner-track,
+.banner-strip:focus-within .banner-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .banner-track { animation: none !important; }
+  .banner-strip { overflow-x: auto; }
+}

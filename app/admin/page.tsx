@@ -26,6 +26,15 @@ import {
 } from "@/app/actions/admin";
 import { maskPhone } from "@/lib/crypto";
 import { deleteGuestRequestAction } from "@/app/actions/guest";
+import { allBannersForAdmin, countPendingBanners } from "@/lib/banners";
+import { BANNER_STATUS_LABEL, bannerVisual } from "@/lib/banner-presets";
+import {
+  approveBannerAction,
+  rejectBannerAction,
+  takeDownBannerAction,
+  deleteBannerAction,
+  moveBannerAction,
+} from "@/app/actions/banners";
 
 type AdminUser = {
   id: number; username: string; nickname: string; bio: string; avatar: string; custom_title: string;
@@ -35,7 +44,7 @@ type AdminUser = {
 
 export const metadata = { title: "管理后台" };
 
-type Tab = "users" | "threads" | "tickets" | "site";
+type Tab = "users" | "threads" | "tickets" | "site" | "banners";
 
 function TabLink({ name, label, badge, activeTab }: { name: Tab; label: string; badge?: number; activeTab: Tab }) {
   return (
@@ -63,7 +72,9 @@ export default async function AdminPage({
   const me = await requireAdmin();
   const { tab: rawTab, status } = await searchParams;
   const tab: Tab =
-    rawTab === "threads" || rawTab === "tickets" || rawTab === "site" ? rawTab : "users";
+    rawTab === "threads" || rawTab === "tickets" || rawTab === "site" || rawTab === "banners"
+      ? rawTab
+      : "users";
 
   const pendingUsers = db
     .prepare(
@@ -108,6 +119,8 @@ export default async function AdminPage({
     "SELECT id, username, contact, detail, created_at FROM guest_requests ORDER BY id DESC LIMIT 50"
   ).all() as Array<{ id: number; username: string; contact: string; detail: string; created_at: string }> : [];
   const customBadge = getSetting("site_badge");
+  const bannerList = allBannersForAdmin();
+  const pendingBannerCount = countPendingBanners();
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
@@ -119,6 +132,7 @@ export default async function AdminPage({
         <TabLink activeTab={tab} name="users" label="用户管理" badge={pendingUsers.length} />
         <TabLink activeTab={tab} name="threads" label="帖子管理" />
         <TabLink activeTab={tab} name="tickets" label="工单处理" />
+        <TabLink activeTab={tab} name="banners" label="横幅管理" badge={pendingBannerCount} />
         <TabLink activeTab={tab} name="site" label="站点设置" />
       </div>
 
@@ -308,6 +322,114 @@ export default async function AdminPage({
           <div className="card">
             <div className="card-header">🏷️ 上传站点徽章（学校校徽）</div>
             <BadgeUploadForm />
+          </div>
+        </div>
+      )}
+
+      {/* 横幅管理 */}
+      {tab === "banners" && (
+        <div className="space-y-4">
+          <div className="card">
+            <div className="card-header flex items-center justify-between">
+              <span>📣 投稿横幅（{bannerList.length}）</span>
+              <Link href="/banner" className="text-xs text-brand hover:underline">
+                投稿页 →
+              </Link>
+            </div>
+            {bannerList.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-muted">还没有人投稿横幅</p>
+            ) : (
+              <ul className="divide-y-[1.5px] divide-line">
+                {bannerList.map((b) => {
+                  const { style } = bannerVisual(b.bg_kind, b.bg_value);
+                  return (
+                    <li key={b.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                      <span
+                        style={style}
+                        className="flex h-12 w-[160px] shrink-0 items-center rounded-md px-2 text-[11px] font-medium text-white ring-1 ring-white/15"
+                        aria-hidden
+                      >
+                        <span className="truncate">{b.title}</span>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="truncate text-sm font-medium">{b.title}</span>
+                          <span
+                            className={`pill ${
+                              b.status === "approved"
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                                : b.status === "pending"
+                                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                  : b.status === "rejected"
+                                    ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                                    : "bg-soft text-muted"
+                            }`}
+                          >
+                            {BANNER_STATUS_LABEL[b.status] ?? b.status}
+                          </span>
+                        </span>
+                        <span className="mt-0.5 block truncate text-xs text-muted">
+                          {b.user_nickname ? `@${b.user_username} · ` : ""}
+                          {b.text || "（无副标题）"}
+                          {b.link ? ` · 跳转 ${b.link}` : ""}
+                        </span>
+                        {b.status === "rejected" && b.reject_reason && (
+                          <span className="mt-0.5 block text-xs text-red-600 dark:text-red-400">
+                            原因：{b.reject_reason}
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        {b.status !== "approved" && (
+                          <form action={approveBannerAction}>
+                            <input type="hidden" name="banner_id" value={b.id} />
+                            <button type="submit" className="btn-xs">
+                              {b.status === "pending" ? "通过并投放" : "重新投放"}
+                            </button>
+                          </form>
+                        )}
+                        {b.status === "approved" && (
+                          <>
+                            <form action={moveBannerAction}>
+                              <input type="hidden" name="banner_id" value={b.id} />
+                              <input type="hidden" name="dir" value="up" />
+                              <button type="submit" className="btn-xs" title="前移">↑</button>
+                            </form>
+                            <form action={moveBannerAction}>
+                              <input type="hidden" name="banner_id" value={b.id} />
+                              <input type="hidden" name="dir" value="down" />
+                              <button type="submit" className="btn-xs" title="后移">↓</button>
+                            </form>
+                            <form action={takeDownBannerAction}>
+                              <input type="hidden" name="banner_id" value={b.id} />
+                              <button type="submit" className="btn-xs">下线</button>
+                            </form>
+                          </>
+                        )}
+                        {b.status === "pending" && (
+                          <form action={rejectBannerAction} className="flex items-center gap-1">
+                            <input type="hidden" name="banner_id" value={b.id} />
+                            <input
+                              name="reason"
+                              maxLength={100}
+                              placeholder="原因"
+                              className="input !w-24 !px-2 !py-1 !text-xs"
+                            />
+                            <button type="submit" className="btn-xs">驳回</button>
+                          </form>
+                        )}
+                        <form action={deleteBannerAction}>
+                          <input type="hidden" name="banner_id" value={b.id} />
+                          <ConfirmSubmit className="btn-danger" message="删除后不可恢复，确定吗？">
+                            删除
+                          </ConfirmSubmit>
+                        </form>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
       )}

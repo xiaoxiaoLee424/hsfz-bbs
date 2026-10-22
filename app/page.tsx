@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { allBoards, hotThreads, siteStats, threadsSorted, announcementThreads, featuredThreads } from "@/lib/queries";
+import { activeBanners } from "@/lib/banners";
+import { BannerStrip } from "@/components/BannerStrip";
 import { CAT_ORDER, CAT_EMOJI, CAT_DESC } from "@/lib/categories";
 import { ThreadList } from "@/components/ThreadList";
 import { fmtNum } from "@/lib/format";
@@ -40,9 +42,26 @@ export default async function HomePage({
   const featured = featuredThreads(8);
   const announcements = user ? [] : announcementThreads(5);
   const stats = user ? siteStats() : null;
+  const banners = activeBanners();
 
   return (
     <div className="space-y-6">
+      {banners.length > 0 && (
+        <section>
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-base font-semibold">📣 校园动态</h2>
+            {user ? (
+              <Link href="/banner" className="text-xs text-brand hover:underline">
+                我也要投稿 →
+              </Link>
+            ) : (
+              <span className="text-xs text-muted">登录后可投稿</span>
+            )}
+          </div>
+          <BannerStrip items={banners} />
+        </section>
+      )}
+
       <section>
         <div className="mb-3 flex items-baseline justify-between">
           <h2 className="text-base font-semibold">🗂️ 板块分类</h2>

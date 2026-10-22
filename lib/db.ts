@@ -222,6 +222,22 @@ CREATE TRIGGER IF NOT EXISTS attachment_files_cleanup_thread AFTER DELETE ON thr
 BEGIN
   DELETE FROM attachment_files WHERE thread_id = OLD.id;
 END;
+CREATE TABLE IF NOT EXISTS banners (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  text TEXT DEFAULT '',
+  link TEXT DEFAULT '',
+  bg_kind TEXT DEFAULT 'preset',
+  bg_value TEXT DEFAULT '',
+  status TEXT DEFAULT 'pending',
+  reject_reason TEXT DEFAULT '',
+  sort INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT '',
+  updated_at TEXT DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS banners_status ON banners(status, sort DESC, id DESC);
+CREATE INDEX IF NOT EXISTS banners_user ON banners(user_id);
 `);
 
 // SQLite serializes migration checks and DDL so concurrent workers can start safely.
