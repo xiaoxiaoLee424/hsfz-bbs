@@ -181,7 +181,7 @@ export async function createReplyAction(
       }
       const info = db
         .prepare(
-          "INSERT INTO replies (thread_id, author_id, content, images, reply_to, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+          "INSERT INTO replies (thread_id, author_id, content, images, reply_to, visibility, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
         )
         .run(
           threadId,
