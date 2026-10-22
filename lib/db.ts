@@ -365,7 +365,7 @@ function ensureGradeBoards() {
     ["上海", "dhu", "东华大学", "🧵"],
     ["上海", "shu", "上海大学", "🎨"],
     // 广州
-    ["广州", "sysu", "中山大学", "🎓"],
+    ["广州", "sysu", "中山大学", "🦆"],
     ["广州", "scut", "华南理工大学", "🏗️"],
     ["广州", "jnu", "暨南大学", "🌏"],
     ["广州", "scnu", "华南师范大学", "🌸"],
@@ -477,6 +477,12 @@ function ensureGradeBoards() {
   for (const [i, [city, slug, name, icon]] of universities.entries()) {
     insUniv.run(slug, name, `${name}的华附人，在这里集合`, icon, 30 + i, city);
     updCity.run(city, slug);
+  }
+
+  // 站主点名的图标调整：只跑一次，之后人工在数据库里改也不会被覆盖
+  if (!db.prepare("SELECT 1 FROM settings WHERE key = 'board_icon_sysu_duck'").get()) {
+    db.prepare("UPDATE boards SET icon = ? WHERE slug = 'sysu'").run("🦆");
+    db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('board_icon_sysu_duck', '1')").run();
   }
 
   // 游戏分区：游戏讨论
