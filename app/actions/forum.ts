@@ -8,7 +8,6 @@ import { nowStr } from "@/lib/format";
 import { saveUploadImage, removeUploadFile } from "@/lib/upload";
 import { notify, mentionUserIds } from "@/lib/notify";
 import { findSensitiveWord } from "@/lib/moderation";
-import { allowAction } from "@/lib/ratelimit";
 import { AttachmentError, attachmentTransaction, prepareAttachments, persistAttachments, deleteThreadAttachments, deleteReplyAttachments } from "@/lib/attachments";
 import { DOCUMENT_LIMITS } from "@/lib/attachment-limits";
 import type { ActionState } from "./auth";
@@ -61,9 +60,6 @@ export async function createThreadAction(
 
   const sensitive = findSensitiveWord(`${title}\n${content}`);
   if (sensitive) return fail(`内容包含敏感词「${sensitive}」，请修改后重发`);
-  const rate = allowAction(`thread:${user.id}`, 60_000);
-  if (!rate.ok) return fail(`发帖太频繁啦，请 ${rate.retryAfterSec} 秒后再试`);
-
   // 图片附件（最多 4 张，浏览器端已压缩）
   const files = uploadedFiles(formData, "images");
   const documents = uploadedFiles(formData, "attachments");
@@ -152,9 +148,6 @@ export async function createReplyAction(
 
   const sensitive = findSensitiveWord(content);
   if (sensitive) return fail(`内容包含敏感词「${sensitive}」，请修改后重发`);
-  const rate = allowAction(`reply:${user.id}`, 30_000);
-  if (!rate.ok) return fail(`回复太频繁啦，请 ${rate.retryAfterSec} 秒后再试`);
-
   // 回复图片（最多 2 张，浏览器端已压缩）
   const files = uploadedFiles(formData, "images");
   const documents = uploadedFiles(formData, "attachments");
