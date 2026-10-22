@@ -10,6 +10,7 @@ import { notify, mentionUserIds } from "@/lib/notify";
 import { findSensitiveWord } from "@/lib/moderation";
 import { AttachmentError, attachmentTransaction, prepareAttachments, persistAttachments, deleteThreadAttachments, deleteReplyAttachments } from "@/lib/attachments";
 import { DOCUMENT_LIMITS } from "@/lib/attachment-limits";
+import { normalizeVisibility } from "@/lib/visibility";
 import type { ActionState } from "./auth";
 
 const fail = (message: string): ActionState => ({ message, ok: false });
@@ -78,14 +79,16 @@ export async function createThreadAction(
 
   // 匿名发表：仅表白墙板块支持
   const anonymous = formData.get("anonymous") === "on" && board.slug === "confession" ? 1 : 0;
+  // 可见范围：所有人 / 仅关注者 / 仅自己
+  const visibility = normalizeVisibility(formData.get("visibility"));
 
   let newThreadId: number;
   try {
     newThreadId = attachmentTransaction(() => {
       const info = db
         .prepare(
-          `INSERT INTO threads (board_id, author_id, title, content, images, anonymous, created_at, last_reply_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO threads (board_id, author_id, title, content, images, anonymous, visibility, created_at, last_reply_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           boardId,
@@ -94,6 +97,7 @@ export async function createThreadAction(
           content,
           imagePaths.length ? JSON.stringify(imagePaths) : "",
           anonymous,
+          visibility,
           nowStr(),
           nowStr()
         );
@@ -148,6 +152,8 @@ export async function createReplyAction(
 
   const sensitive = findSensitiveWord(content);
   if (sensitive) return fail(`内容包含敏感词「${sensitive}」，请修改后重发`);
+  // 可见范围：所有人 / 仅关注者 / 仅自己
+  const visibility = normalizeVisibility(formData.get("visibility"));
   // 回复图片（最多 2 张，浏览器端已压缩）
   const files = uploadedFiles(formData, "images");
   const documents = uploadedFiles(formData, "attachments");
@@ -183,6 +189,7 @@ export async function createReplyAction(
           content,
           imagePaths.length ? JSON.stringify(imagePaths) : "",
           replyTo,
+          visibility,
           nowStr()
         );
       const lastReplyId = Number(info.lastInsertRowid);

@@ -255,6 +255,7 @@ for (const [table, column, definition] of [
   ["users", "phone", "TEXT DEFAULT ''"], ["users", "email", "TEXT DEFAULT ''"],
   ["users", "real_name", "TEXT NOT NULL DEFAULT ''"], ["users", "student_id", "TEXT NOT NULL DEFAULT ''"],
   ["threads", "like_count", "INTEGER DEFAULT 0"], ["rate_limits", "expires_at", "INTEGER DEFAULT 0"],
+  ["threads", "visibility", "TEXT DEFAULT 'public'"], ["replies", "visibility", "TEXT DEFAULT 'public'"],
   ["boards", "city", "TEXT DEFAULT ''"],
 ]) ensureColumn(table, column, definition);
 if (!db.prepare("SELECT value FROM settings WHERE key = 'like_count_backfilled'").get()) {

@@ -70,7 +70,7 @@ export default async function UserProfilePage({
           ? tab
           : "threads";
   const threads = userThreads(profile.id);
-  const replies = userReplies(profile.id);
+  const replies = userReplies(profile.id, me.id);
   const favorites = isSelf ? userFavorites(profile.id) : [];
   const likes = likesReceived(profile.id);
 
@@ -124,12 +124,18 @@ export default async function UserProfilePage({
               <span className="text-muted">
                 获赞 <b className="text-ink">{likes}</b>
               </span>
-              <span className="text-muted">
+              <Link
+                href={`/u/${profile.username}?tab=following`}
+                className="text-muted hover:text-brand hover:underline"
+              >
                 关注 <b className="text-ink">{fstats.following}</b>
-              </span>
-              <span className="text-muted">
+              </Link>
+              <Link
+                href={`/u/${profile.username}?tab=followers`}
+                className="text-muted hover:text-brand hover:underline"
+              >
                 粉丝 <b className="text-ink">{fstats.followers}</b>
-              </span>
+              </Link>
               <span className="text-muted">加入于 {profile.created_at.slice(0, 10)}</span>
             </div>
             {/* 等级进度 */}

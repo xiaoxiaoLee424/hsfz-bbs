@@ -3,7 +3,7 @@ import { db } from "./db";
 export type ThreadRow = {
   id: number; board_id: number; author_id: number; title: string; content: string;
   images: string; anonymous: number;
-  views: number; reply_count: number; is_pinned: number; is_featured: number;
+  views: number; reply_count: number; is_pinned: number; is_featured: number; visibility: string;
   created_at: string; last_reply_at: string;
   slug: string; board_name: string; board_icon: string; grade_lock: string; city: string;
   author_name: string; author_username: string; author_avatar: string; author_title: string;
@@ -25,14 +25,16 @@ function rows(sql: string, ...args: unknown[]): ThreadRow[] {
 
 export function latestThreads(limit = 20): ThreadRow[] {
   return rows(
-    `${THREAD_SELECT} ORDER BY t.is_pinned DESC, COALESCE(NULLIF(t.last_reply_at,''), t.created_at) DESC LIMIT ?`,
+    `${THREAD_SELECT} WHERE t.visibility = 'public'
+     ORDER BY t.is_pinned DESC, COALESCE(NULLIF(t.last_reply_at,''), t.created_at) DESC LIMIT ?`,
     limit
   );
 }
 
 export function boardThreads(boardId: number): ThreadRow[] {
   return rows(
-    `${THREAD_SELECT} WHERE t.board_id = ? ORDER BY t.is_pinned DESC, COALESCE(NULLIF(t.last_reply_at,''), t.created_at) DESC`,
+    `${THREAD_SELECT} WHERE t.board_id = ? AND t.visibility = 'public'
+     ORDER BY t.is_pinned DESC, COALESCE(NULLIF(t.last_reply_at,''), t.created_at) DESC`,
     boardId
   );
 }
@@ -43,29 +45,34 @@ export function threadById(id: number): ThreadRow | undefined {
 
 export function hotThreads(limit = 5): ThreadRow[] {
   return rows(
-    `${THREAD_SELECT} ORDER BY t.reply_count * 3 + t.like_count * 2 + t.views * 0.05 DESC LIMIT ?`,
+    `${THREAD_SELECT} WHERE t.visibility = 'public'
+     ORDER BY t.reply_count * 3 + t.like_count * 2 + t.views * 0.05 DESC LIMIT ?`,
     limit
   );
 }
 
 export function searchThreads(q: string): ThreadRow[] {
   const like = `%${q.slice(0, 100).replace(/[\\%_]/g, "\\$&")}%`;
-  return rows(`${THREAD_SELECT} WHERE t.title LIKE ? ESCAPE '\\' OR t.content LIKE ? ESCAPE '\\' ORDER BY t.created_at DESC LIMIT 50`, like, like);
+  return rows(`${THREAD_SELECT} WHERE t.visibility = 'public' AND (t.title LIKE ? ESCAPE '\\' OR t.content LIKE ? ESCAPE '\\')
+    ORDER BY t.created_at DESC LIMIT 50`, like, like);
 }
 
 export function userThreads(userId: number): ThreadRow[] {
-  // 匿名帖不在个人主页展示，避免暴露作者
-  return rows(`${THREAD_SELECT} WHERE t.author_id = ? AND t.anonymous = 0 ORDER BY t.created_at DESC`, userId);
+  // 匿名帖不在个人主页展示，避免暴露作者；非公开帖只给作者本人看
+  return rows(`${THREAD_SELECT} WHERE t.author_id = ? AND t.anonymous = 0
+    AND (t.visibility = 'public' OR t.author_id = ?) ORDER BY t.created_at DESC`, userId, userId);
 }
 
-export function userReplies(userId: number) {
+export function userReplies(userId: number, viewerId = 0) {
   return db
     .prepare(
       `SELECT r.*, t.title AS thread_title, t.id AS tid, b.slug, b.name AS board_name
        FROM replies r JOIN threads t ON t.id = r.thread_id JOIN boards b ON b.id = t.board_id
-       WHERE r.author_id = ? AND r.deleted = 0 ORDER BY r.created_at DESC`
+       WHERE r.author_id = ? AND r.deleted = 0
+         AND (r.visibility = 'public' OR r.author_id = ?)
+       ORDER BY r.created_at DESC`
     )
-    .all(userId) as Array<{
+    .all(userId, viewerId) as Array<{
       id: number; content: string; created_at: string; thread_title: string; tid: number; slug: string; board_name: string;
     }>;
 }
@@ -73,7 +80,7 @@ export function userReplies(userId: number) {
 export function userFavorites(userId: number): ThreadRow[] {
   return rows(
     `${THREAD_SELECT} JOIN thread_favorites f ON f.thread_id = t.id AND f.user_id = ?
-     ORDER BY t.created_at DESC`,
+     WHERE t.visibility = 'public' ORDER BY t.created_at DESC`,
     userId
   );
 }
@@ -82,7 +89,7 @@ export function threadReplies(threadId: number) {
   return db
     .prepare(
       // 已删除的楼层保留占位（楼层号不变），但不再下发正文与图片。
-      `SELECT r.id, r.thread_id, r.author_id, r.reply_to, r.created_at, r.deleted,
+      `SELECT r.id, r.thread_id, r.author_id, r.reply_to, r.created_at, r.deleted, r.visibility,
         CASE WHEN r.deleted = 1 THEN '' ELSE r.content END AS content,
         CASE WHEN r.deleted = 1 THEN '' ELSE r.images END AS images,
         u.nickname, u.username, u.avatar, u.custom_title,
@@ -93,7 +100,7 @@ export function threadReplies(threadId: number) {
     )
     .all(threadId) as Array<{
       id: number; thread_id: number; author_id: number; content: string; images: string; reply_to: number;
-      created_at: string; deleted: number; nickname: string; username: string;
+      created_at: string; deleted: number; visibility: string; nickname: string; username: string;
       avatar: string; custom_title: string; post_count: number;
     }>;
 }
@@ -203,13 +210,13 @@ export function threadsSorted(sort: string, limit = 25): ThreadRow[] {
         : sort === "reply"
           ? "t.reply_count DESC"
           : "t.is_pinned DESC, t.created_at DESC";
-  return rows(`${THREAD_SELECT} ORDER BY ${order} LIMIT ?`, limit);
+  return rows(`${THREAD_SELECT} WHERE t.visibility = 'public' ORDER BY ${order} LIMIT ?`, limit);
 }
 
 /** 站务公告板块的帖子（游客可见） */
 export function announcementThreads(limit = 5): ThreadRow[] {
   return rows(
-    `${THREAD_SELECT} WHERE b.slug = 'announcements' ORDER BY t.created_at DESC LIMIT ?`,
+    `${THREAD_SELECT} WHERE b.slug = 'announcements' AND t.visibility = 'public' ORDER BY t.created_at DESC LIMIT ?`,
     limit
   );
 }
@@ -218,8 +225,8 @@ export function announcementThreads(limit = 5): ThreadRow[] {
 export function featuredThreads(limit = 8): ThreadRow[] {
   return rows(
     `${THREAD_SELECT}
-     WHERE t.is_pinned = 1 OR t.is_featured = 1
-        OR t.reply_count >= 3 OR (SELECT COUNT(*) FROM thread_likes l WHERE l.thread_id = t.id) >= 2
+     WHERE t.visibility = 'public' AND (t.is_pinned = 1 OR t.is_featured = 1
+        OR t.reply_count >= 3 OR (SELECT COUNT(*) FROM thread_likes l WHERE l.thread_id = t.id) >= 2)
      ORDER BY t.is_pinned DESC, t.is_featured DESC,
               t.reply_count * 3 + (SELECT COUNT(*) FROM thread_likes l WHERE l.thread_id = t.id) * 2 + t.views * 0.05 DESC
      LIMIT ?`,

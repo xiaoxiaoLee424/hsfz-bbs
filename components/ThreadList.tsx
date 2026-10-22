@@ -3,12 +3,17 @@ import type { ThreadRow } from "@/lib/queries";
 import { timeAgo, fmtNum } from "@/lib/format";
 import { IconComment, IconEye, IconHeart } from "./icons";
 
-function imageCount(t: ThreadRow): number {
+function threadImages(t: ThreadRow): string[] {
   try {
-    return t.images ? (JSON.parse(t.images) as string[]).length : 0;
+    const parsed: unknown = t.images ? JSON.parse(t.images) : [];
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
   } catch {
-    return 0;
+    return [];
   }
+}
+
+function imageCount(t: ThreadRow): number {
+  return threadImages(t).length;
 }
 
 export function ThreadList({
@@ -41,14 +46,21 @@ export function ThreadRowItem({
   t: ThreadRow;
   showBoard?: boolean;
 }) {
+  const images = threadImages(t);
   return (
-    <div className="px-4 py-3 transition-colors hover:bg-soft/60">
+    <div className="flex gap-3 px-4 py-3 transition-colors hover:bg-soft/60">
+      <div className="min-w-0 flex-1">
       <div className="flex items-center gap-2">
         {t.is_pinned === 1 && (
           <span className="pill shrink-0 bg-red-500/10 text-red-600 dark:text-red-400">置顶</span>
         )}
         {t.is_featured === 1 && (
           <span className="pill shrink-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">精华</span>
+        )}
+        {t.visibility && t.visibility !== "public" && (
+          <span className="pill shrink-0 bg-soft text-muted" title="仅自己/关注者可见">
+            🔒
+          </span>
         )}
         <Link
           href={`/t/${t.id}`}
@@ -91,6 +103,18 @@ export function ThreadRowItem({
         </span>
         {imageCount(t) > 0 && <span>🖼️ {imageCount(t)}图</span>}
       </div>
+      </div>
+      {images.length > 0 && (
+        <Link href={`/t/${t.id}`} className="shrink-0" tabIndex={-1} aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={images[0]}
+            alt=""
+            loading="lazy"
+            className="h-14 w-14 rounded-md border-[1.5px] border-line object-cover"
+          />
+        </Link>
+      )}
     </div>
   );
 }

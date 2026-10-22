@@ -9,6 +9,7 @@ import { TitleBadge } from "@/components/TitleBadge";
 import { SubmitButton, ConfirmSubmit } from "@/components/SubmitButton";
 import { IconHeart, IconStar, IconComment, IconEye } from "@/components/icons";
 import { timeAgo, fmtNum } from "@/lib/format";
+import { canViewVisibility, VISIBILITY_LABEL } from "@/lib/visibility";
 import {
   toggleLikeAction,
   toggleFavoriteAction,
@@ -48,10 +49,23 @@ export default async function ThreadPage({
   const user = await getCurrentUser();
   if (!user && thread.slug !== "announcements") redirect("/login");
 
+  // 关注关系：用于判断「仅关注者可见」的内容能不能看
+  const followedAuthorIds = new Set<number>(
+    user
+      ? (db.prepare("SELECT following_id FROM follows WHERE follower_id = ?").all(user.id) as { following_id: number }[]).map(
+          (row) => row.following_id
+        )
+      : []
+  );
+  if (!canViewVisibility(thread.visibility ?? "public", thread.author_id, user, followedAuthorIds)) notFound();
+
   if (user && allowAction(`view:${user.id}:${tid}`, 300_000).ok) {
     db.prepare("UPDATE threads SET views = views + 1 WHERE id = ?").run(tid);
   }
   const replies = user ? threadReplies(tid) : [];
+  const replyVisible = (r: { visibility?: string; author_id: number; deleted: number }) =>
+    r.deleted !== 1 && canViewVisibility(r.visibility ?? "public", r.author_id, user, followedAuthorIds);
+  const visibleReplies = replies.filter(replyVisible);
   const attachments = attachmentsForThread(tid);
   const attachmentsByReply = new Map<number, typeof attachments>();
   for (const attachment of attachments) {
@@ -68,16 +82,25 @@ export default async function ThreadPage({
   }
   // 引用回复：楼层映射（回复 id → 楼层号/作者/内容）
   const floorMap = new Map(
-    replies.map((r, i) => [
-      r.id,
-      { floor: i + 1, nickname: r.nickname, content: r.content, deleted: r.deleted === 1 },
-    ])
+    replies.map((r, i) => {
+      const visible = replyVisible(r);
+      return [
+        r.id,
+        {
+          floor: i + 1,
+          nickname: r.nickname,
+          content: visible ? r.content : "",
+          deleted: r.deleted === 1,
+          hidden: !visible,
+        },
+      ];
+    })
   );
-  const visibleReplyCount = replies.filter((r) => r.deleted !== 1).length;
+  const visibleReplyCount = visibleReplies.length;
   // 已删除的楼层不再渲染，但楼号仍按原始位置计算，后面的楼层不会前移。
   const floorOf = new Map(replies.map((r, i) => [r.id, i + 1]));
   const quoteId = Number(quoteParam) || 0;
-  const quotedReply = quoteId ? replies.find((r) => r.id === quoteId && r.deleted !== 1) : undefined;
+  const quotedReply = quoteId ? visibleReplies.find((r) => r.id === quoteId) : undefined;
   const quote = quotedReply
     ? {
         replyTo: quotedReply.id,
@@ -122,6 +145,11 @@ export default async function ThreadPage({
             )}
             {thread.is_featured === 1 && (
               <span className="pill bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">精华</span>
+            )}
+            {thread.visibility !== "public" && (
+              <span className="pill bg-soft text-muted" title="这条帖子的可见范围">
+                🔒 {VISIBILITY_LABEL[thread.visibility] ?? thread.visibility}
+              </span>
             )}
             <h1 className="text-xl font-semibold leading-snug">{thread.title}</h1>
           </div>
@@ -275,7 +303,7 @@ export default async function ThreadPage({
           <p className="px-4 py-10 text-center text-muted">{user ? "还没有回复，抢个沙发？" : "登录后查看同学回复"}</p>
         ) : (
           <ol className="divide-y-[1.5px] divide-line">
-            {replies.filter((r) => r.deleted !== 1).map((r) => {
+            {visibleReplies.map((r) => {
               const canDelete =
                 !!user && (user.id === r.author_id || user.id === thread.author_id || isAdmin);
               return (
@@ -319,6 +347,8 @@ export default async function ThreadPage({
                       <div className="mb-2 rounded-md border-l-4 border-brand/50 bg-soft/70 px-3 py-1.5 text-xs text-muted">
                         {ref.deleted ? (
                           <>引用的 #{ref.floor} 楼已被删除</>
+                        ) : ref.hidden ? (
+                          <>引用的 #{ref.floor} 楼不可见</>
                         ) : (
                           <>
                             回复 <span className="font-semibold text-brand">@{ref.nickname}</span> 的 #{ref.floor}{" "}

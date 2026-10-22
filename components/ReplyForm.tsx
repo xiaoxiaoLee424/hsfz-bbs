@@ -10,6 +10,7 @@ import { ImagePicker } from "./ImagePicker";
 import { SubmitButton } from "./SubmitButton";
 import { AttachmentPicker } from "./AttachmentPicker";
 import { DOCUMENT_LIMITS } from "@/lib/attachment-limits";
+import { VISIBILITY_OPTIONS } from "@/lib/visibility";
 
 export function ReplyForm({
   threadId,
@@ -117,7 +118,17 @@ export function ReplyForm({
         <label className="mb-1 block text-sm font-medium">附件</label>
         <AttachmentPicker key={attachmentKey} />
       </div>
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+        <label className="mr-auto flex items-center gap-1.5 text-xs text-muted">
+          <span>可见范围</span>
+          <select name="visibility" defaultValue="public" className="input !w-auto !px-2 !py-1 !text-xs">
+            {VISIBILITY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <SubmitButton disabled={imagesBusy}>↩︎ 回复</SubmitButton>
       </div>
     </form>

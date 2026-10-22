@@ -12,6 +12,7 @@ import { ImagePicker } from "./ImagePicker";
 import { SubmitButton } from "./SubmitButton";
 import { AttachmentPicker } from "./AttachmentPicker";
 import { DOCUMENT_LIMITS } from "@/lib/attachment-limits";
+import { VISIBILITY_OPTIONS } from "@/lib/visibility";
 
 export function NewThreadForm({
   boards,
@@ -133,6 +134,16 @@ export function NewThreadForm({
             )}
           </select>
         </div>
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium">可见范围</label>
+        <select name="visibility" defaultValue="public" className="input">
+          {VISIBILITY_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label} · {option.hint}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium">标题</label>
