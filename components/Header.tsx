@@ -4,6 +4,7 @@ import { unreadTicketCount, openTicketCount, unreadNotificationCount } from "@/l
 import { unreadDmCount } from "@/lib/dm";
 import { Avatar } from "./Avatar";
 import SiteBadge from "./SiteBadge";
+import { DetailsAutoClose } from "./DetailsAutoClose";
 import ThemeMenu from "./ThemeMenu";
 import { IconSearch } from "./icons";
 import { logoutAction } from "@/app/actions/auth";
@@ -82,7 +83,7 @@ export default async function Header() {
             >
               ✏️ 发帖
             </Link>
-            <details className="relative">
+            <DetailsAutoClose className="relative">
               <summary className="flex cursor-pointer list-none rounded-full ring-2 ring-transparent transition hover:ring-brand/40">
                 <Avatar user={user} size={32} />
               </summary>
@@ -118,7 +119,7 @@ export default async function Header() {
                   </button>
                 </form>
               </div>
-            </details>
+            </DetailsAutoClose>
           </div>
         ) : (
           <div className="flex shrink-0 items-center gap-2">

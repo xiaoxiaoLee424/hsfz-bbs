@@ -24,7 +24,7 @@ export function SubmitButton({
 }
 
 /**
- * 两步确认按钮：第一次点击进入待确认状态（变红），再次点击原生提交表单。
+ * 两步确认按钮：第一次点击进入待确认状态（变红），10 秒内再次点击才提交。
  * 不依赖 window.confirm，在微信内置浏览器等环境下同样可靠。
  */
 export function ConfirmSubmit({
@@ -56,7 +56,7 @@ export function ConfirmSubmit({
         // React may reuse this node as the submit button before the click's default action.
         event.preventDefault();
         setArmed(true);
-        timer.current = setTimeout(() => setArmed(false), 3000);
+        timer.current = setTimeout(() => setArmed(false), 10000);
       }}
     >
       {children}

@@ -255,3 +255,14 @@ body {
   .banner-track { animation: none !important; }
   .banner-strip { overflow-x: auto; }
 }
+
+/* ============ 移动端点按反馈 ============
+ * 页面水合完成前，JS 按钮点了不会触发；给出即时的按下反馈，
+ * 让用户知道“点到了”，而不是反复戳。 */
+button, a, summary, select, label {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+button:active, a:active, summary:active, label:active {
+  opacity: .82;
+}
