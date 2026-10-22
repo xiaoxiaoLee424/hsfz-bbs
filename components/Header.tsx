@@ -55,7 +55,7 @@ export default async function Header() {
             <input
               name="q"
               placeholder="搜索帖子…"
-              className="h-8 w-40 rounded-md border-[1.5px] border-line bg-input pl-3 pr-8 text-sm text-ink outline-none transition-all placeholder:text-muted/60 focus:w-52"
+              className="header-search h-8 w-40 rounded-md border-[1.5px] border-line bg-input pl-3 pr-8 text-sm text-ink outline-none transition-all placeholder:text-muted/60 focus:w-52"
             />
             <button
               type="submit"
@@ -81,7 +81,7 @@ export default async function Header() {
               <summary className="flex cursor-pointer list-none rounded-full ring-2 ring-transparent transition hover:ring-brand/40">
                 <Avatar user={user} size={32} />
               </summary>
-              <div className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-md border-[1.5px] border-line bg-card py-1 text-sm text-ink shadow-lg">
+              <div className="popover absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-md border-[1.5px] border-line bg-card py-1 text-sm text-ink shadow-lg">
                 <div className="border-b-[1.5px] border-line px-3 py-2">
                   <p className="font-semibold">{user.nickname}</p>
                 </div>

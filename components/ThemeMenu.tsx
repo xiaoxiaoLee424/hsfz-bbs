@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const PRESETS = [
   { key: "teal", label: "原版青绿", icon: "🟢" },
@@ -9,14 +9,29 @@ const PRESETS = [
   { key: "dark", label: "深色", icon: "🌙" },
 ];
 
+// 当前主题属于「外部状态」（写在 <html data-theme> 上，由 layout 里的启动脚本和本组件共同维护），
+// 用 useSyncExternalStore 读取，避免在 effect 里 setState 造成级联渲染。
+const THEME_CHANGE_EVENT = "hsfz-theme-change";
+
+function subscribeTheme(onChange: () => void) {
+  window.addEventListener(THEME_CHANGE_EVENT, onChange);
+  return () => window.removeEventListener(THEME_CHANGE_EVENT, onChange);
+}
+
+function readTheme() {
+  return document.documentElement.getAttribute("data-theme") || "teal";
+}
+
+// 服务端渲染读不到 DOM，先按默认主题输出，水合后再切到真实值。
+function readServerTheme() {
+  return "teal";
+}
+
 export default function ThemeMenu() {
   const [open, setOpen] = useState(false);
-  const [current, setCurrent] = useState("teal");
+  const current = useSyncExternalStore(subscribeTheme, readTheme, readServerTheme);
   const boxRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setCurrent(document.documentElement.getAttribute("data-theme") || "teal");
-  }, []);
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => {
@@ -35,7 +50,7 @@ export default function ThemeMenu() {
     } catch {
       /* 忽略 */
     }
-    setCurrent(key);
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
     setOpen(false);
   }
 
@@ -52,7 +67,7 @@ export default function ThemeMenu() {
         🎨
       </button>
       {open && (
-        <div className="absolute right-0 z-50 mt-1 w-44 rounded-md border border-line bg-card p-1 shadow-lg">
+        <div className="popover absolute right-0 z-50 mt-1 w-44 rounded-md border border-line bg-card p-1 shadow-lg">
           {PRESETS.map((p) => (
             <button
               key={p.key}

@@ -17,6 +17,10 @@
   --soft: var(--primary-very-low);
   --input: var(--secondary);
   --link: var(--tertiary);
+  /* 页面正文配色的快照：页头/深色横幅等局部会改写 --fg、--mut，
+   * 其中的浮层（下拉菜单等）用这两个变量还原成正文配色。 */
+  --fg-page: var(--fg);
+  --mut-page: var(--mut);
   color-scheme: light;
 }
 
@@ -165,9 +169,11 @@ body {
 [data-theme="teal"] header {
   background: linear-gradient(135deg, #1a5276 0%, #148f77 100%);
   border-bottom-color: rgba(255, 255, 255, 0.15);
+  /* 页头文字走白色：改写配色变量本身，header 里的 text-ink / text-muted 自动跟随，
+   * 浮层只需把变量还原，不用写 !important 去压工具类。 */
+  --fg: #ffffff;
+  --mut: rgba(255, 255, 255, 0.75);
 }
-[data-theme="teal"] header .text-ink { color: #ffffff; }
-[data-theme="teal"] header .text-muted { color: rgba(255, 255, 255, 0.75); }
 [data-theme="teal"] header .btn { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
 [data-theme="teal"] header .btn:hover { background: rgba(255, 255, 255, 0.24); }
 [data-theme="teal"] header .input {
@@ -197,9 +203,9 @@ body {
 [data-theme="blue"] header {
   background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
   border-bottom-color: rgba(255, 255, 255, 0.15);
+  --fg: #ffffff;
+  --mut: rgba(255, 255, 255, 0.75);
 }
-[data-theme="blue"] header .text-ink { color: #ffffff; }
-[data-theme="blue"] header .text-muted { color: rgba(255, 255, 255, 0.75); }
 [data-theme="blue"] header .btn { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
 [data-theme="blue"] header .btn:hover { background: rgba(255, 255, 255, 0.24); }
 [data-theme="blue"] header .input {
@@ -208,3 +214,22 @@ body {
   color: #fff;
 }
 [data-theme="blue"] header .input::placeholder { color: rgba(255, 255, 255, 0.6); }
+
+/* 页头搜索框是白底，输入的文字必须用正文配色，否则白底白字看不见 */
+[data-theme="teal"] header .header-search,
+[data-theme="blue"] header .header-search {
+  color: var(--fg-page);
+}
+[data-theme="teal"] header .header-search::placeholder,
+[data-theme="blue"] header .header-search::placeholder {
+  color: color-mix(in oklab, var(--mut-page) 60%, transparent);
+}
+
+/* ============ 页头浮层（头像下拉、主题菜单） ============
+ * 这些面板是 bg-card 的白底，但 DOM 在 <header> 里，会继承页头的白字配色，
+ * 结果白底白字、看上去像"白屏"。这里把配色变量还原成正文配色。 */
+[data-theme="teal"] header .popover,
+[data-theme="blue"] header .popover {
+  --fg: var(--fg-page);
+  --mut: var(--mut-page);
+}
