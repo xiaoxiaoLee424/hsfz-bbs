@@ -38,6 +38,11 @@ export default async function Header() {
               )}
             </Link>
           )}
+          {user && (
+            <Link href="/banner" className="rounded-md px-2.5 py-1.5 text-ink hover:bg-soft">
+              投稿
+            </Link>
+          )}
           {user?.role === "admin" && (
             <Link href="/admin" className="relative rounded-md px-2.5 py-1.5 text-ink hover:bg-soft">
               管理后台
@@ -90,6 +95,9 @@ export default async function Header() {
                 </Link>
                 <Link href="/settings" className="block px-3 py-2 hover:bg-soft">
                   账号设置
+                </Link>
+                <Link href="/banner" className="block px-3 py-2 hover:bg-soft">
+                  投稿横幅
                 </Link>
                 <Link href="/messages" className="block px-3 py-2 hover:bg-soft">
                   我的消息
