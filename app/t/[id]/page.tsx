@@ -74,6 +74,8 @@ export default async function ThreadPage({
     ])
   );
   const visibleReplyCount = replies.filter((r) => r.deleted !== 1).length;
+  // 已删除的楼层不再渲染，但楼号仍按原始位置计算，后面的楼层不会前移。
+  const floorOf = new Map(replies.map((r, i) => [r.id, i + 1]));
   const quoteId = Number(quoteParam) || 0;
   const quotedReply = quoteId ? replies.find((r) => r.id === quoteId && r.deleted !== 1) : undefined;
   const quote = quotedReply
@@ -269,27 +271,13 @@ export default async function ThreadPage({
       {/* 回复列表 */}
       <section className="card mt-4">
         <div className="card-header">💬 全部回复（{visibleReplyCount}）</div>
-        {replies.length === 0 ? (
+        {visibleReplyCount === 0 ? (
           <p className="px-4 py-10 text-center text-muted">{user ? "还没有回复，抢个沙发？" : "登录后查看同学回复"}</p>
         ) : (
           <ol className="divide-y-[1.5px] divide-line">
-            {replies.map((r, i) => {
+            {replies.filter((r) => r.deleted !== 1).map((r) => {
               const canDelete =
                 !!user && (user.id === r.author_id || user.id === thread.author_id || isAdmin);
-              if (r.deleted === 1) {
-                return (
-                  <li key={r.id} id={`reply-${r.id}`} className="flex scroll-mt-24 gap-3 px-4 py-3">
-                    <span
-                      className="mt-0.5 h-8 w-8 shrink-0 rounded-md border-[1.5px] border-line bg-soft"
-                      aria-hidden
-                    />
-                    <div className="flex min-w-0 flex-1 items-center gap-2 text-xs text-muted">
-                      <span>🗑️ 该回复已被删除</span>
-                      <span className="ml-auto">{i + 1} 楼</span>
-                    </div>
-                  </li>
-                );
-              }
               return (
               <li key={r.id} id={`reply-${r.id}`} className="flex scroll-mt-24 gap-3 px-4 py-3">
                 <Link href={`/u/${r.username}`} className="shrink-0">
@@ -315,14 +303,14 @@ export default async function ThreadPage({
                         <input type="hidden" name="reply_id" value={r.id} />
                         <ConfirmSubmit
                           className="cursor-pointer text-xs text-red-600/80 hover:text-red-600 hover:underline dark:text-red-400/80 dark:hover:text-red-400"
-                          message="删除后这一层会显示「该回复已被删除」，文字、图片和附件都会清理，楼层号不变。"
+                          message="删除后这一层会隐藏，文字、图片和附件都会清理；后面楼层的编号保持不变。"
                           confirmText="确认删除？"
                         >
                           删除
                         </ConfirmSubmit>
                       </form>
                     )}
-                    <span className="ml-auto">{i + 1} 楼</span>
+                    <span className="ml-auto">{floorOf.get(r.id)} 楼</span>
                   </div>
                   {(() => {
                     const ref = r.reply_to ? floorMap.get(r.reply_to) : undefined;
