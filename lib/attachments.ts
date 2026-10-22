@@ -203,6 +203,10 @@ export async function readAttachmentContent(id: string): Promise<Buffer> {
 export function deleteThreadAttachments(threadId: number): void {
   attachmentTransaction(() => { db.prepare("DELETE FROM attachment_files WHERE thread_id = ?").run(threadId); });
 }
+/** 删除某条回复的附件；孤立对象由 attachmentTransaction 在提交后统一清理。 */
+export function deleteReplyAttachments(replyId: number): void {
+  attachmentTransaction(() => { db.prepare("DELETE FROM attachment_files WHERE reply_id = ?").run(replyId); });
+}
 
 /** Upgrade the earlier BLOB representation without changing IDs or dropping old files. */
 function migrateLegacyAttachments(): void {

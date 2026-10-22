@@ -63,7 +63,7 @@ export function userReplies(userId: number) {
     .prepare(
       `SELECT r.*, t.title AS thread_title, t.id AS tid, b.slug, b.name AS board_name
        FROM replies r JOIN threads t ON t.id = r.thread_id JOIN boards b ON b.id = t.board_id
-       WHERE r.author_id = ? ORDER BY r.created_at DESC`
+       WHERE r.author_id = ? AND r.deleted = 0 ORDER BY r.created_at DESC`
     )
     .all(userId) as Array<{
       id: number; content: string; created_at: string; thread_title: string; tid: number; slug: string; board_name: string;
@@ -81,14 +81,19 @@ export function userFavorites(userId: number): ThreadRow[] {
 export function threadReplies(threadId: number) {
   return db
     .prepare(
-      `SELECT r.*, u.nickname, u.username, u.avatar, u.custom_title,
+      // 已删除的楼层保留占位（楼层号不变），但不再下发正文与图片。
+      `SELECT r.id, r.thread_id, r.author_id, r.reply_to, r.created_at, r.deleted,
+        CASE WHEN r.deleted = 1 THEN '' ELSE r.content END AS content,
+        CASE WHEN r.deleted = 1 THEN '' ELSE r.images END AS images,
+        u.nickname, u.username, u.avatar, u.custom_title,
         (SELECT COUNT(*) FROM threads th WHERE th.author_id = u.id) +
         (SELECT COUNT(*) FROM replies rp WHERE rp.author_id = u.id) AS post_count
        FROM replies r JOIN users u ON u.id = r.author_id
        WHERE r.thread_id = ? ORDER BY r.created_at ASC, r.id ASC`
     )
     .all(threadId) as Array<{
-      id: number; content: string; images: string; reply_to: number; created_at: string; nickname: string; username: string;
+      id: number; thread_id: number; author_id: number; content: string; images: string; reply_to: number;
+      created_at: string; deleted: number; nickname: string; username: string;
       avatar: string; custom_title: string; post_count: number;
     }>;
 }

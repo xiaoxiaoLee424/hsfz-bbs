@@ -13,6 +13,7 @@ import {
   toggleLikeAction,
   toggleFavoriteAction,
   deleteOwnThreadAction,
+  deleteReplyAction,
 } from "@/app/actions/forum";
 import { ReplyForm } from "@/components/ReplyForm";
 import { Markdown } from "@/components/Markdown";
@@ -67,10 +68,14 @@ export default async function ThreadPage({
   }
   // 引用回复：楼层映射（回复 id → 楼层号/作者/内容）
   const floorMap = new Map(
-    replies.map((r, i) => [r.id, { floor: i + 1, nickname: r.nickname, content: r.content }])
+    replies.map((r, i) => [
+      r.id,
+      { floor: i + 1, nickname: r.nickname, content: r.content, deleted: r.deleted === 1 },
+    ])
   );
+  const visibleReplyCount = replies.filter((r) => r.deleted !== 1).length;
   const quoteId = Number(quoteParam) || 0;
-  const quotedReply = quoteId ? replies.find((r) => r.id === quoteId) : undefined;
+  const quotedReply = quoteId ? replies.find((r) => r.id === quoteId && r.deleted !== 1) : undefined;
   const quote = quotedReply
     ? {
         replyTo: quotedReply.id,
@@ -123,7 +128,7 @@ export default async function ThreadPage({
               <IconEye /> {fmtNum(thread.views)} 浏览
             </span>
             <span className="inline-flex items-center gap-1">
-              <IconComment /> {replies.length} 回复
+              <IconComment /> {visibleReplyCount} 回复
             </span>
             <span>发布于 {timeAgo(thread.created_at)}</span>
           </div>
@@ -263,12 +268,29 @@ export default async function ThreadPage({
 
       {/* 回复列表 */}
       <section className="card mt-4">
-        <div className="card-header">💬 全部回复（{replies.length}）</div>
+        <div className="card-header">💬 全部回复（{visibleReplyCount}）</div>
         {replies.length === 0 ? (
           <p className="px-4 py-10 text-center text-muted">{user ? "还没有回复，抢个沙发？" : "登录后查看同学回复"}</p>
         ) : (
           <ol className="divide-y-[1.5px] divide-line">
-            {replies.map((r, i) => (
+            {replies.map((r, i) => {
+              const canDelete =
+                !!user && (user.id === r.author_id || user.id === thread.author_id || isAdmin);
+              if (r.deleted === 1) {
+                return (
+                  <li key={r.id} id={`reply-${r.id}`} className="flex scroll-mt-24 gap-3 px-4 py-3">
+                    <span
+                      className="mt-0.5 h-8 w-8 shrink-0 rounded-md border-[1.5px] border-line bg-soft"
+                      aria-hidden
+                    />
+                    <div className="flex min-w-0 flex-1 items-center gap-2 text-xs text-muted">
+                      <span>🗑️ 该回复已被删除</span>
+                      <span className="ml-auto">{i + 1} 楼</span>
+                    </div>
+                  </li>
+                );
+              }
+              return (
               <li key={r.id} id={`reply-${r.id}`} className="flex scroll-mt-24 gap-3 px-4 py-3">
                 <Link href={`/u/${r.username}`} className="shrink-0">
                   <Avatar user={r} size={32} />
@@ -288,6 +310,18 @@ export default async function ThreadPage({
                         引用
                       </Link>
                     )}
+                    {canDelete && (
+                      <form action={deleteReplyAction}>
+                        <input type="hidden" name="reply_id" value={r.id} />
+                        <ConfirmSubmit
+                          className="cursor-pointer text-xs text-red-600/80 hover:text-red-600 hover:underline dark:text-red-400/80 dark:hover:text-red-400"
+                          message="删除后这一层会显示「该回复已被删除」，文字、图片和附件都会清理，楼层号不变。"
+                          confirmText="确认删除？"
+                        >
+                          删除
+                        </ConfirmSubmit>
+                      </form>
+                    )}
                     <span className="ml-auto">{i + 1} 楼</span>
                   </div>
                   {(() => {
@@ -295,12 +329,18 @@ export default async function ThreadPage({
                     if (!ref) return null;
                     return (
                       <div className="mb-2 rounded-md border-l-4 border-brand/50 bg-soft/70 px-3 py-1.5 text-xs text-muted">
-                        回复 <span className="font-semibold text-brand">@{ref.nickname}</span> 的 #{ref.floor}{" "}
-                        楼：
-                        <span className="ml-1">
-                          {ref.content.slice(0, 60)}
-                          {ref.content.length > 60 ? "…" : ""}
-                        </span>
+                        {ref.deleted ? (
+                          <>引用的 #{ref.floor} 楼已被删除</>
+                        ) : (
+                          <>
+                            回复 <span className="font-semibold text-brand">@{ref.nickname}</span> 的 #{ref.floor}{" "}
+                            楼：
+                            <span className="ml-1">
+                              {ref.content.slice(0, 60)}
+                              {ref.content.length > 60 ? "…" : ""}
+                            </span>
+                          </>
+                        )}
                       </div>
                     );
                   })()}
@@ -345,7 +385,8 @@ export default async function ThreadPage({
                   <AttachmentList attachments={attachmentsByReply.get(r.id) ?? []} />
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ol>
         )}
       </section>

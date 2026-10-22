@@ -235,6 +235,7 @@ for (const [table, column, definition] of [
   ["users", "grade", "TEXT DEFAULT ''"], ["boards", "grade_lock", "TEXT DEFAULT ''"],
   ["threads", "images", "TEXT DEFAULT ''"], ["threads", "anonymous", "INTEGER DEFAULT 0"],
   ["replies", "images", "TEXT DEFAULT ''"], ["replies", "reply_to", "INTEGER DEFAULT 0"],
+  ["replies", "deleted", "INTEGER DEFAULT 0"], ["replies", "deleted_at", "TEXT DEFAULT ''"],
   ["users", "phone", "TEXT DEFAULT ''"], ["users", "email", "TEXT DEFAULT ''"],
   ["users", "real_name", "TEXT NOT NULL DEFAULT ''"], ["users", "student_id", "TEXT NOT NULL DEFAULT ''"],
   ["threads", "like_count", "INTEGER DEFAULT 0"], ["rate_limits", "expires_at", "INTEGER DEFAULT 0"],

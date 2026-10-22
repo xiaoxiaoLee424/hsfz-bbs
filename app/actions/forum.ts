@@ -9,7 +9,7 @@ import { saveUploadImage, removeUploadFile } from "@/lib/upload";
 import { notify, mentionUserIds } from "@/lib/notify";
 import { findSensitiveWord } from "@/lib/moderation";
 import { allowAction } from "@/lib/ratelimit";
-import { AttachmentError, attachmentTransaction, prepareAttachments, persistAttachments, deleteThreadAttachments } from "@/lib/attachments";
+import { AttachmentError, attachmentTransaction, prepareAttachments, persistAttachments, deleteThreadAttachments, deleteReplyAttachments } from "@/lib/attachments";
 import { DOCUMENT_LIMITS } from "@/lib/attachment-limits";
 import type { ActionState } from "./auth";
 
@@ -220,6 +220,42 @@ export async function createReplyAction(
   revalidatePath(`/t/${threadId}`);
   revalidatePath("/");
   return null;
+}
+
+/** 删除回复：作者本人、楼主、管理员可删。保留楼层占位，楼层号不变。 */
+export async function deleteReplyAction(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) return;
+  const replyId = Number(formData.get("reply_id"));
+  if (!Number.isSafeInteger(replyId) || replyId <= 0) return;
+  const reply = db
+    .prepare(
+      `SELECT r.id, r.thread_id, r.author_id, r.images, r.deleted, t.author_id AS thread_author_id
+       FROM replies r JOIN threads t ON t.id = r.thread_id WHERE r.id = ?`
+    )
+    .get(replyId) as
+    | { id: number; thread_id: number; author_id: number; images: string; deleted: number; thread_author_id: number }
+    | undefined;
+  if (!reply || reply.deleted === 1) return;
+  const allowed =
+    user.id === reply.author_id || user.id === reply.thread_author_id || user.role === "admin";
+  if (!allowed) return;
+
+  // 先提交数据库（正文/图片清空、楼层数减一），提交成功后再删磁盘文件。
+  const paths = attachmentTransaction(() => {
+    const urls = imageUrls([{ images: reply.images }]);
+    deleteReplyAttachments(replyId);
+    db.prepare(
+      "UPDATE replies SET deleted = 1, deleted_at = ?, content = '', images = '' WHERE id = ? AND deleted = 0"
+    ).run(nowStr(), replyId);
+    db.prepare("UPDATE threads SET reply_count = MAX(0, reply_count - 1) WHERE id = ?").run(reply.thread_id);
+    // 指向这条回复的通知已经失去意义，一并清掉。
+    db.prepare("DELETE FROM notifications WHERE reply_id = ?").run(replyId);
+    return urls;
+  });
+  await Promise.all(paths.map(removeUploadFile));
+  revalidatePath(`/t/${reply.thread_id}`);
+  revalidatePath("/");
 }
 
 /** 作者删除自己的帖子（连同回复、点赞、收藏、图片） */
