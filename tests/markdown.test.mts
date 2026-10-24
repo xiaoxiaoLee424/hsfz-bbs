@@ -59,3 +59,67 @@ test("editor preview and published content use the same renderer", () => {
   assert.equal(preview, published);
   assert.match(renderToStaticMarkup(createElement(MarkdownPreview, { content: "" })), /暂无内容/);
 });
+
+test("short codes render as standalone emoji spans with canonical metadata", async () => {
+  const { emojiByCode, codeOf } = await import("../lib/emoji-catalog");
+  const html = render(":smile: and :+1::skin-tone-4: and :thumbsup: and :not_a_real_code:");
+  // 三种 code（含别名）各渲染一个独立 span，元数据用规范 short code
+  assert.equal((html.match(/<span class="native-emoji"/g) ?? []).length, 3);
+  assert.match(html, /data-emoji-code=":smile:"[^>]*>😄<\/span>/);
+  assert.match(html, /data-emoji-code=":\+1::skin-tone-4:"[^>]*>👍🏽<\/span>/);
+  assert.match(html, /data-emoji-code=":\+1:"[^>]*>👍<\/span>/);
+  assert.match(html, /title=":smile:"/);
+  // 未识别 code 保持原文
+  assert.match(html, /:not_a_real_code:/);
+  // 手打的裸 Unicode 不包装
+  assert.doesNotMatch(render("😄 plain"), /native-emoji/);
+  // 代码与行内代码内不替换
+  assert.doesNotMatch(render("`:smile:`\n\n```\n:smile:\n```"), /native-emoji/);
+  // 目录：别名归一、肤色变体、unicode 反查取规范 id
+  assert.equal(emojiByCode.get(":thumbsup:")?.code, ":+1:");
+  assert.equal(emojiByCode.get(":smile:")?.native, "😄");
+  assert.equal(codeOf("👍"), ":+1:");
+  assert.equal(codeOf("👍🏽"), ":+1::skin-tone-4:");
+  assert.equal(codeOf("😄"), ":smile:");
+  assert.equal(codeOf("nope"), "");
+});
+
+test("upload-pending tokens render as a status chip instead of an empty-src img", () => {
+  const html = render("before ![上传中](upload-pending:abc-123) after");
+  assert.doesNotMatch(html, /<img[^>]*src=""/);
+  assert.match(html, /class="upload-pending"/);
+  assert.match(html, /上传中/);
+  assert.match(html, /before /);
+  assert.match(html, / after/);
+});
+
+test("spoiler blocks trim padding newlines so no blank lines wrap the content", () => {
+  const html = render("前文\n\n[spoiler]\n剧透内容\n[/spoiler]\n\n后文");
+  assert.match(html, /<span class="spoiler"[^>]*>剧透内容<\/span>/);
+  assert.doesNotMatch(html, /<span class="spoiler"[^>]*><br>/);
+  // 内容内部的手动换行仍然保留
+  const multiline = render("[spoiler]第一行\n第二行[/spoiler]");
+  assert.match(multiline, /第一行<br\/>\s*第二行/);
+});
+
+test("emoji-only paragraphs are marked for jumbo rendering", () => {
+  const marked = (content: string) => render(content).includes('class="emoji-only"');
+  assert.ok(marked("前文\n\n:smile:\n\n后文"));
+  assert.ok(marked("😄"));
+  assert.ok(marked(":smile: :thumbsup:"));
+  assert.ok(marked("😄 :smile:"));
+  assert.ok(!marked("😄 文字"));
+  assert.ok(!marked(":smile: :grinning: :smile: :grinning:"));
+  assert.ok(!marked("`😄`"));
+});
+
+test("custom emojis keep precedence and carry metadata", () => {
+  const html = renderToStaticMarkup(
+    createElement(RichText, {
+      content: ":huafu: 自定义表情",
+      emojis: [{ name: "huafu", image_path: "/uploads/huafu.png" }],
+    }),
+  );
+  assert.match(html, /<img[^>]*class="custom-emoji"[^>]*data-emoji-code=":huafu:"[^>]*>/);
+  assert.match(html, /<img[^>]*title=":huafu:"[^>]*>/);
+});

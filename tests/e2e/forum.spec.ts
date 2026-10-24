@@ -38,7 +38,8 @@ test("real login, hydration and theme toggle work under production CSP", async (
   await expect(page).toHaveURL("/");
   await expect(page.getByText("PRIVATE_THREAD_TITLE", { exact: true }).first()).toBeVisible();
   const before = await page.locator("html").getAttribute("class");
-  await page.getByRole("button", { name: "切换深色 / 浅色主题" }).click();
+  await page.getByRole("button", { name: "选择主题" }).click();
+  await page.getByRole("button", { name: /深色/ }).click();
   await expect.poll(() => page.locator("html").getAttribute("class")).not.toBe(before);
   expect(violations).toEqual([]);
 });
@@ -49,18 +50,28 @@ test("toolbar and emoji update controlled editor state and preview", async ({ pa
   const editor = page.locator('textarea[name="content"]');
   await editor.fill("hello");
   await editor.evaluate((element: HTMLTextAreaElement) => element.setSelectionRange(0, 5));
-  await page.getByRole("button", { name: "B", exact: true }).click();
+  await page.getByRole("button", { name: "加粗" }).click();
   await expect(editor).toHaveValue("**hello**");
-  await page.getByRole("button", { name: "插入表情" }).click();
+  await editor.fill("");
+  await page.getByRole("button", { name: "插入引用块" }).click();
+  await expect(editor).toHaveValue(/\[quote\]\n引用内容\n\[\/quote\]/);
+  await page.getByRole("button", { name: "添加表情" }).click();
   await page.getByRole("button", { name: "😀", exact: true }).click();
-  await expect(editor).toHaveValue(/😀/);
-  await page.getByRole("button", { name: "👁 实时预览" }).click();
-  await expect(page.locator(".markdown-body")).toContainText("😀");
+  await expect(editor).toHaveValue(/:grinning:/);
+  await expect(page.locator(".composer-preview .markdown-body")).toContainText("😀");
   await editor.press("End");
   await editor.press("a");
-  await expect(page.locator(".markdown-body")).toContainText("a");
+  await expect(page.locator(".composer-preview .markdown-body")).toContainText("a");
   await editor.fill("$x^2$ and $\\frac{1}{2}$");
-  await expect(page.locator(".katex")).toHaveCount(2);
+  await expect(page.locator(".composer-preview .katex")).toHaveCount(2);
+  await page.getByRole("button", { name: "隐藏预览" }).click();
+  await expect(page.locator(".composer-preview")).toBeHidden();
+  await page.getByRole("button", { name: "显示预览" }).click();
+  await expect(page.locator(".composer-preview")).toBeVisible();
+  await page.getByRole("button", { name: "插入图片" }).click();
+  await expect(page.locator('input[type="file"][multiple]').first()).toBeAttached();
+  await page.getByRole("button", { name: "添加附件" }).click();
+  await expect(page.locator('input[aria-label="选择文件"]').first()).toBeAttached();
 });
 
 test("forged grade changes fail and reviewed grade stays unchanged", async ({ page, context }) => {

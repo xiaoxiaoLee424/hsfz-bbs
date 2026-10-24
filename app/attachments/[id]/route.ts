@@ -1,3 +1,4 @@
+import {visibleContent} from "@/lib/content-policy";
 import { getCurrentUser } from "@/lib/auth";
 import { getAttachment, getAttachmentStorage } from "@/lib/attachments";
 import { allowAction } from "@/lib/ratelimit";
@@ -22,6 +23,7 @@ export async function GET(
   if (!attachment) return notFound();
   const user = await getCurrentUser();
   if (!user && (attachment.boardSlug !== "announcements" || attachment.replyId !== 0)) return notFound();
+  if (!visibleContent(user,attachment.threadId,attachment.replyId)) return notFound();
   const rate = allowAction(`attachment-read:${user ? `user:${user.id}` : `guest:${clientIpFromHeaders(request.headers)}`}`, 60_000, 60);
   if (!rate.ok) return new Response("请求过于频繁，请稍后再试", { status: 429, headers: {
     "Cache-Control": "private, no-store", "Retry-After": String(rate.retryAfterSec),

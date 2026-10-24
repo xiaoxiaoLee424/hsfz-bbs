@@ -15,11 +15,14 @@
     "admin:create": "tsx scripts/create-admin.mts",
     "test:e2e": "playwright test",
     "backup": "tsx scripts/backup.mts",
-    "phone-key:rotate": "tsx scripts/rotate-phone-key.mts"
+    "phone-key:rotate": "tsx scripts/rotate-phone-key.mts",
+    "uploads:cleanup": "tsx scripts/cleanup-uploads.mts"
   },
   "dependencies": {
+    "@emoji-mart/data": "^1.2.1",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^13.0.3",
+    "emoji-mart": "^5.6.0",
     "katex": "^0.19.0",
     "next": "16.4.2",
     "pdfjs-dist": "^6.4.299",
@@ -30,25 +33,28 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
+    "saxes": "^6.0.0",
     "sharp": "^0.35.5",
-    "unified": "^11.0.5",
-    "remark-parse": "^11.0.0"
+    "turndown": "^7.2.4",
+    "unified": "^11.0.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
     "@tailwindcss/turbopack": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^9.6.0",
+    "@types/mdast": "^4.0.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/turndown": "^5.0.6",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "qrcode": "^1.5.4",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
-    "typescript": "^5",
-    "@types/mdast": "^4.0.4"
+    "typescript": "^5"
   },
   "overrides": {
     "katex": "$katex"

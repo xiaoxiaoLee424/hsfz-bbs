@@ -57,10 +57,10 @@ export function searchThreads(q: string): ThreadRow[] {
     ORDER BY t.created_at DESC LIMIT 50`, like, like);
 }
 
-export function userThreads(userId: number): ThreadRow[] {
-  // 匿名帖不在个人主页展示，避免暴露作者；非公开帖只给作者本人看
+export function userThreads(userId: number, viewerId = 0): ThreadRow[] {
+  // 匿名帖不在个人主页展示，避免暴露作者；非公开帖只对作者本人可见
   return rows(`${THREAD_SELECT} WHERE t.author_id = ? AND t.anonymous = 0
-    AND (t.visibility = 'public' OR t.author_id = ?) ORDER BY t.created_at DESC`, userId, userId);
+    AND (t.visibility = 'public' OR t.author_id = ?) ORDER BY t.created_at DESC`, userId, viewerId);
 }
 
 export function userReplies(userId: number, viewerId = 0) {
@@ -89,7 +89,7 @@ export function threadReplies(threadId: number) {
   return db
     .prepare(
       // 已删除的楼层保留占位（楼层号不变），但不再下发正文与图片。
-      `SELECT r.id, r.thread_id, r.author_id, r.reply_to, r.created_at, r.deleted, r.visibility,
+      `SELECT r.id, r.thread_id, r.author_id, r.reply_to, r.reply_target_set, r.created_at, r.deleted, r.visibility,
         CASE WHEN r.deleted = 1 THEN '' ELSE r.content END AS content,
         CASE WHEN r.deleted = 1 THEN '' ELSE r.images END AS images,
         u.nickname, u.username, u.avatar, u.custom_title,
@@ -99,7 +99,7 @@ export function threadReplies(threadId: number) {
        WHERE r.thread_id = ? ORDER BY r.created_at ASC, r.id ASC`
     )
     .all(threadId) as Array<{
-      id: number; thread_id: number; author_id: number; content: string; images: string; reply_to: number;
+      id: number; thread_id: number; author_id: number; content: string; images: string; reply_to: number; reply_target_set:number;
       created_at: string; deleted: number; visibility: string; nickname: string; username: string;
       avatar: string; custom_title: string; post_count: number;
     }>;

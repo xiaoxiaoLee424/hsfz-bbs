@@ -34,9 +34,6 @@ export default async function HomePage({
   const sort = SORTS.some((s) => s.key === sortParam) ? (sortParam as string) : "latest";
   const user = await getCurrentUser();
   const boards = user ? allBoards() : [];
-  const grouped = CAT_ORDER.map((cat) => ({ cat, items: boards.filter((b) => b.category === cat) })).filter(
-    (g) => g.items.length
-  );
   const threads = user ? threadsSorted(sort, 25) : [];
   const hot = user ? hotThreads(5) : [];
   const featured = featuredThreads(8);

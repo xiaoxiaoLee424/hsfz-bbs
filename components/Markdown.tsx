@@ -1,3 +1,4 @@
+import {emojis} from "@/lib/forum-features";
 import { db } from "@/lib/db";
 import { markdownMentionNames } from "@/lib/markdown-mentions";
 import { RichText } from "./RichText";
@@ -12,5 +13,5 @@ export function Markdown({ content, className = "" }: { content: string; classNa
   const users = candidates.length ? db.prepare(
     `SELECT username FROM users WHERE username IN (${candidates.map(() => "?").join(",")})`
   ).all(...candidates) as { username: string }[] : [];
-  return <RichText content={content} className={className} usernames={users.map((user) => user.username)} />;
+  return <RichText emojis={emojis()} content={content} className={className} usernames={users.map((user) => user.username)} />;
 }
