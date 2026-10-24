@@ -1,5 +1,9 @@
 "use server";
 
+import {claimInline} from "@/lib/inline-uploads";
+import {visibleContent} from "@/lib/content-policy";
+import { normalizeVisibility } from "@/lib/visibility";
+import {saveReferences} from "@/lib/forum-features";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -10,7 +14,6 @@ import { notify, mentionUserIds } from "@/lib/notify";
 import { findSensitiveWord } from "@/lib/moderation";
 import { AttachmentError, attachmentTransaction, prepareAttachments, persistAttachments, deleteThreadAttachments, deleteReplyAttachments } from "@/lib/attachments";
 import { DOCUMENT_LIMITS } from "@/lib/attachment-limits";
-import { normalizeVisibility } from "@/lib/visibility";
 import type { ActionState } from "./auth";
 
 const fail = (message: string): ActionState => ({ message, ok: false });
@@ -41,7 +44,7 @@ export async function createThreadAction(
   if (!user) return fail("请先登录后再发帖");
   const boardId = Number(formData.get("board_id"));
   const title = String(formData.get("title") ?? "").trim();
-  const content = String(formData.get("content") ?? "").trim();
+  const content = String(formData.get("content") ?? "").replace(/\r\n?/g,"\n").trim();
   if (!boardId) return fail("请选择板块");
   if (title.length < 2 || title.length > 60) return fail("标题长度需在 2-60 字之间");
   if (content.length > 20000) return fail("正文不能超过 20000 字");
@@ -103,6 +106,8 @@ export async function createThreadAction(
         );
       const createdId = Number(info.lastInsertRowid);
       persistAttachments(prepared, user.id, createdId);
+      saveReferences(content,createdId,0,user);
+      claimInline(content,user.id,createdId,0,DOCUMENT_LIMITS.maxSubmissionBytes-[...files,...documents].reduce((n,f)=>n+f.size,0),4-files.length,3-documents.length,DOCUMENT_LIMITS.maxTotalBytes-documents.reduce((n,f)=>n+f.size,0));
       // 匿名帖不发送 @提及通知，避免暴露作者
       if (!anonymous) {
         mentionUserIds(content, user.id).forEach((uid) =>
@@ -126,7 +131,7 @@ export async function createReplyAction(
   const user = await getCurrentUser();
   if (!user) return fail("请先登录后再回复");
   const threadId = Number(formData.get("thread_id"));
-  const content = String(formData.get("content") ?? "").trim();
+  const content = String(formData.get("content") ?? "").replace(/\r\n?/g,"\n").trim();
   if (!threadId) return fail("帖子不存在");
   if (!content) return fail("回复内容不能为空");
   if (content.length > 10000) return fail("回复不能超过 10000 字");
@@ -138,7 +143,7 @@ export async function createReplyAction(
     .get(threadId) as
     | { id: number; author_id: number; title: string; grade_lock: string; board_name: string }
     | undefined;
-  if (!thread) return fail("帖子不存在或已删除");
+  if (!thread || !visibleContent(user,threadId)) return fail("帖子不存在或不可见");
   if (thread.grade_lock && user.role !== "admin" && user.grade !== thread.grade_lock)
     return fail(
       `该帖位于年级群「${thread.board_name}」，仅限${thread.grade_lock}同学回复，请通过「我的消息」发工单申请更正年级`
@@ -146,14 +151,14 @@ export async function createReplyAction(
 
   // 引用回复：校验被引用楼层属于本帖
   const replyTo = Number(formData.get("reply_to")) || 0;
-  if (replyTo && !db.prepare("SELECT id FROM replies WHERE id = ? AND thread_id = ?").get(replyTo, threadId)) {
+  // 可见范围：所有人 / 仅关注者 / 仅自己
+  const visibility = normalizeVisibility(formData.get("visibility"));
+  if (replyTo && !visibleContent(user,threadId,replyTo)) {
     return fail("引用的楼层不存在或已被删除");
   }
 
   const sensitive = findSensitiveWord(content);
   if (sensitive) return fail(`内容包含敏感词「${sensitive}」，请修改后重发`);
-  // 可见范围：所有人 / 仅关注者 / 仅自己
-  const visibility = normalizeVisibility(formData.get("visibility"));
   // 回复图片（最多 2 张，浏览器端已压缩）
   const files = uploadedFiles(formData, "images");
   const documents = uploadedFiles(formData, "attachments");
@@ -173,10 +178,10 @@ export async function createReplyAction(
   try {
     attachmentTransaction(() => {
       // Upload processing yields to other requests; the thread may have been deleted meanwhile.
-      if (!db.prepare("SELECT 1 FROM threads WHERE id = ?").get(threadId)) {
+      if (!visibleContent(user,threadId)) {
         throw new AttachmentError("帖子不存在或已删除");
       }
-      if (replyTo && !db.prepare("SELECT 1 FROM replies WHERE id = ? AND thread_id = ?").get(replyTo, threadId)) {
+      if (replyTo && !visibleContent(user,threadId,replyTo)) {
         throw new AttachmentError("引用的楼层不存在或已被删除");
       }
       const info = db
@@ -193,7 +198,11 @@ export async function createReplyAction(
           nowStr()
         );
       const lastReplyId = Number(info.lastInsertRowid);
+      db.prepare("UPDATE replies SET reply_target_set=? WHERE id=?").run(replyTo || formData.get("reply_target_set")==="1"?1:0,lastReplyId);
       persistAttachments(prepared, user.id, threadId, lastReplyId);
+      saveReferences(content,threadId,lastReplyId,user);
+      if(replyTo) db.prepare("INSERT OR IGNORE INTO content_references VALUES(?,?,?,?,'reply')").run(threadId,lastReplyId,threadId,replyTo);
+      claimInline(content,user.id,threadId,lastReplyId,DOCUMENT_LIMITS.maxSubmissionBytes-[...files,...documents].reduce((n,f)=>n+f.size,0),2-files.length,3-documents.length,DOCUMENT_LIMITS.maxTotalBytes-documents.reduce((n,f)=>n+f.size,0));
 
       // 站内通知：回复帖主 / 引用楼层 / @提及
       notify(thread.author_id, "reply", user.id, threadId, lastReplyId, `回复了你的帖子《${thread.title}》`);
@@ -294,7 +303,7 @@ export async function toggleLikeAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
   const threadId = Number(formData.get("thread_id"));
-  if (!Number.isSafeInteger(threadId) || threadId <= 0 || !db.prepare("SELECT id FROM threads WHERE id = ?").get(threadId)) return;
+  if (!Number.isSafeInteger(threadId) || threadId <= 0 || !visibleContent(user,threadId)) return;
   db.transaction(() => {
     const liked = db
       .prepare("SELECT 1 AS x FROM thread_likes WHERE user_id = ? AND thread_id = ?")
@@ -319,7 +328,7 @@ export async function toggleFavoriteAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
   const threadId = Number(formData.get("thread_id"));
-  if (!Number.isSafeInteger(threadId) || threadId <= 0 || !db.prepare("SELECT id FROM threads WHERE id = ?").get(threadId)) return;
+  if (!Number.isSafeInteger(threadId) || threadId <= 0 || !visibleContent(user,threadId)) return;
   db.transaction(() => {
     const faved = db
       .prepare("SELECT 1 AS x FROM thread_favorites WHERE user_id = ? AND thread_id = ?")

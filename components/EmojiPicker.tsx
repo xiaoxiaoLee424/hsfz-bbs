@@ -1,13 +1,6 @@
 "use client";
-
-import { useEffect, useRef, useState } from "react";
-
-const EMOJIS =
-  "😀 😄 😁 😆 😅 🤣 😂 🙂 😉 😊 😍 🥰 😘 😜 🤪 🤔 🤨 🧐 🤓 😎 🥳 😏 😌 😔 😪 😭 😢 😱 🥺 🤗 🤫 🤭 😇 🙄 😴 😷 🤒 🤕 🤧 🥵 🥶 🤯 😤 👍 👎 👏 🙌 🤝 💪 🙏 👀 💯 🔥 ✨ 🎉 🎓 📚 ✏️ 📝 ❤️ 💚 💙 💜 🖤 ⭐ 🌙".split(
-    " "
-  );
-
-/** 表情选择器：把选中的表情插入到目标输入框的光标处 */
+import { useCallback } from "react";
+import { EmojiPopover } from "./EmojiPopover";
 export function EmojiPicker({
   targetRef,
   onChange,
@@ -15,58 +8,20 @@ export function EmojiPicker({
   targetRef: React.RefObject<HTMLTextAreaElement | null>;
   onChange: (value: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const boxRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
-  function pick(emoji: string) {
-    const el = targetRef.current;
-    if (!el) return;
-    const start = el.selectionStart ?? el.value.length;
-    const end = el.selectionEnd ?? el.value.length;
-    const next = el.value.slice(0, start) + emoji + el.value.slice(end);
-    onChange(next);
-    requestAnimationFrame(() => {
-      el.selectionStart = el.selectionEnd = start + emoji.length;
-      el.focus();
-    });
-  }
-
-  return (
-    <div className="relative" ref={boxRef}>
-      <button
-        type="button"
-        aria-label="插入表情"
-        className="text-lg leading-none hover:opacity-70"
-        onClick={() => setOpen(!open)}
-      >
-        😀
-      </button>
-      {open && (
-        <div className="absolute right-0 z-50 mt-1 grid w-72 grid-cols-8 gap-1 rounded-md border-[1.5px] border-line bg-card p-2 shadow-lg">
-          {EMOJIS.map((e, i) => (
-            <button
-              key={i}
-              type="button"
-              className="cursor-pointer rounded p-1 text-lg hover:bg-soft"
-              onClick={() => {
-                pick(e);
-                setOpen(false);
-              }}
-            >
-              {e}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+  const select = useCallback(
+    ({ code }: { key: string; code: string }) => {
+      const el = targetRef.current;
+      if (!el) return;
+      // 统一插入 :short_code: 文本：标准与自定义表情同一形态，渲染层共用一套词典
+      const start = el.selectionStart,
+        end = el.selectionEnd;
+      onChange(el.value.slice(0, start) + code + el.value.slice(end));
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(start + code.length, start + code.length);
+      });
+    },
+    [targetRef, onChange],
   );
+  return <EmojiPopover onSelect={select} />;
 }

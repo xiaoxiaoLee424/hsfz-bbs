@@ -15,7 +15,7 @@ export default async function Header() {
   const openTickets = user?.role === "admin" ? openTicketCount() : 0;
 
   return (
-    <header className="sticky top-0 z-40 border-b-[1.5px] border-line bg-header shadow-sm">
+    <header className="site-header sticky top-0 z-40 border-b-[1.5px] border-line bg-header shadow-sm">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2 text-[15px] font-semibold text-ink">
           <SiteBadge className="h-8 w-8" />

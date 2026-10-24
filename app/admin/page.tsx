@@ -122,7 +122,7 @@ export default async function AdminPage({
   const bannerList = allBannersForAdmin();
   const pendingBannerCount = countPendingBanners();
   return (
-    <div className="space-y-4">
+    <div className="space-y-4"><Link href="/admin/emojis" className="btn">自定义表情管理</Link>
       <div className="flex items-baseline justify-between">
         <h1 className="text-lg font-semibold">🛠️ 管理后台</h1>
         <p className="text-xs text-muted">仅管理员可见</p>

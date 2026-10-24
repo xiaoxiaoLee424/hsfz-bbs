@@ -69,8 +69,8 @@ export default async function UserProfilePage({
         : tab === "following" || tab === "followers"
           ? tab
           : "threads";
-  const threads = userThreads(profile.id);
-  const replies = userReplies(profile.id, me.id);
+  const threads = userThreads(profile.id, me?.id ?? 0);
+  const replies = userReplies(profile.id, me?.id ?? 0);
   const favorites = isSelf ? userFavorites(profile.id) : [];
   const likes = likesReceived(profile.id);
 

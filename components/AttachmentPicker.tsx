@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DOCUMENT_LIMITS } from "@/lib/attachment-limits";
 
 export function AttachmentPicker() {
@@ -8,6 +8,12 @@ export function AttachmentPicker() {
   const chooserRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
+  useEffect(() => {
+    // 工具栏的「添加附件」按钮经由该事件打开这里的文件选择框
+    const open = () => chooserRef.current?.click();
+    window.addEventListener("forum-open-attachments", open);
+    return () => window.removeEventListener("forum-open-attachments", open);
+  }, []);
 
   function sync(next: File[]) {
     const transfer = new DataTransfer();
@@ -53,7 +59,11 @@ export function AttachmentPicker() {
           ))}
         </ul>
       )}
-      {files.length < DOCUMENT_LIMITS.maxFiles && <button type="button" className="btn" onClick={() => chooserRef.current?.click()}>选择文件</button>}
+      {files.length < DOCUMENT_LIMITS.maxFiles && (
+        <button type="button" className="hidden" onClick={() => chooserRef.current?.click()}>
+          选择文件
+        </button>
+      )}
       {error && <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );

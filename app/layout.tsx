@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 const themeInit = `(function(){try{
   var p = localStorage.getItem('hsfz-theme-preset') || localStorage.getItem('hsfz-theme') || 'teal';
-  if (p === 'light' || p === 'discourse') p = 'teal';
+  if (p === 'light') p = 'teal';
   if (p === 'dark') document.documentElement.classList.add('dark');
   document.documentElement.setAttribute('data-theme', p);
 }catch(e){}})();`;

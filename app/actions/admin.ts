@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { redirect } from "next/navigation";
 
 /** 管理员为用户重置密码（替代自助找回：同学找管理员人工核实后使用） */
 export async function adminResetPasswordAction(
@@ -109,8 +110,10 @@ export async function deleteThreadAction(formData: FormData): Promise<void> {
   await requireAdmin();
   const threadId = Number(formData.get("thread_id"));
   if (!threadId) return;
-  const row = db.prepare("SELECT images FROM threads WHERE id = ?").get(threadId) as
-    | { images: string }
+  const row = db
+    .prepare("SELECT t.images, b.slug FROM threads t JOIN boards b ON b.id = t.board_id WHERE t.id = ?")
+    .get(threadId) as
+    | { images: string; slug: string }
     | undefined;
   if (!row) return;
   const paths = attachmentTransaction(() => {
@@ -134,6 +137,8 @@ export async function deleteThreadAction(formData: FormData): Promise<void> {
   });
   await Promise.all(paths.map(removeUploadFile));
   revalidatePath("/", "layout");
+  // 删除后回到原板块，而不是停留在一个即将 404 的帖子页
+  redirect(`/b/${row.slug}`);
 }
 
 export async function togglePinAction(formData: FormData): Promise<void> {

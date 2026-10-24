@@ -162,7 +162,7 @@ test("reply attachments clear after success and are downloadable", async ({ page
   await form.getByRole("button", { name: "↩︎ 回复" }).click();
   await expect(form.locator('textarea[name="content"]')).toHaveValue("");
   await expect(form.getByText("练习.pdf", { exact: true })).toHaveCount(0);
-  const replyFile = page.locator("section").getByText("练习.pdf", { exact: true });
+  const replyFile = page.locator("article").getByText("练习.pdf", { exact: true });
   await expect(replyFile).toBeVisible();
   const href = await replyFile.locator("xpath=ancestor::li[1]").getByRole("link", { name: "下载", exact: true }).getAttribute("href");
   expect(await (await context.request.get(href!)).body()).toEqual(pdfDocument());
@@ -173,8 +173,9 @@ test("deleting a post removes its links without breaking shared document bytes",
   await authenticate(context, 4);
   await page.goto("/t/12");
   const link = await page.locator("article").getByRole("link", { name: "下载", exact: true }).getAttribute("href");
-  await page.locator("article").getByRole("button", { name: "删除", exact: true }).click();
-  await page.locator("article").getByRole("button", { name: "确认删除？", exact: true }).click();
+  await page.locator("#post-0 .post-more summary").click();
+  await page.locator("#post-0").getByRole("button", { name: "删除帖子", exact: true }).click();
+  await page.locator("#post-0").getByRole("button", { name: "确认执行？", exact: true }).click();
   await expect(page).toHaveURL(/\/b\/study$/);
   expect((await context.request.get(link!)).status()).toBe(404);
   await page.goto("/t/10");

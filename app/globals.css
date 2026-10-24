@@ -21,6 +21,9 @@
    * 其中的浮层（下拉菜单等）用这两个变量还原成正文配色。 */
   --fg-page: var(--fg);
   --mut-page: var(--mut);
+  /* Composer 专属：引用左线与编辑/预览输入面（四主题随语义变量自动翻转） */
+  --composer-quote-line: var(--primary-low-mid);
+  --composer-pane: color-mix(in oklab, var(--card) 94%, var(--fg) 6%);
   color-scheme: light;
 }
 
@@ -166,7 +169,7 @@ body {
   --header_background: #148f77;
   --header_primary: #ffffff;
 }
-[data-theme="teal"] header {
+[data-theme="teal"] header.site-header{
   background: linear-gradient(135deg, #1a5276 0%, #148f77 100%);
   border-bottom-color: rgba(255, 255, 255, 0.15);
   /* 页头文字走白色：改写配色变量本身，header 里的 text-ink / text-muted 自动跟随，
@@ -174,14 +177,14 @@ body {
   --fg: #ffffff;
   --mut: rgba(255, 255, 255, 0.75);
 }
-[data-theme="teal"] header .btn { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
-[data-theme="teal"] header .btn:hover { background: rgba(255, 255, 255, 0.24); }
-[data-theme="teal"] header .input {
+[data-theme="teal"] header.site-header .btn { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
+[data-theme="teal"] header.site-header .btn:hover { background: rgba(255, 255, 255, 0.24); }
+[data-theme="teal"] header.site-header .input {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.35);
   color: #fff;
 }
-[data-theme="teal"] header .input::placeholder { color: rgba(255, 255, 255, 0.6); }
+[data-theme="teal"] header.site-header .input::placeholder { color: rgba(255, 255, 255, 0.6); }
 
 [data-theme="blue"] {
   color-scheme: light;
@@ -200,36 +203,36 @@ body {
   --success: #16a34a;
   --quaternary: #d97706;
 }
-[data-theme="blue"] header {
+[data-theme="blue"] header.site-header{
   background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
   border-bottom-color: rgba(255, 255, 255, 0.15);
   --fg: #ffffff;
   --mut: rgba(255, 255, 255, 0.75);
 }
-[data-theme="blue"] header .btn { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
-[data-theme="blue"] header .btn:hover { background: rgba(255, 255, 255, 0.24); }
-[data-theme="blue"] header .input {
+[data-theme="blue"] header.site-header .btn { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
+[data-theme="blue"] header.site-header .btn:hover { background: rgba(255, 255, 255, 0.24); }
+[data-theme="blue"] header.site-header .input {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.35);
   color: #fff;
 }
-[data-theme="blue"] header .input::placeholder { color: rgba(255, 255, 255, 0.6); }
+[data-theme="blue"] header.site-header .input::placeholder { color: rgba(255, 255, 255, 0.6); }
 
 /* 页头搜索框是白底，输入的文字必须用正文配色，否则白底白字看不见 */
-[data-theme="teal"] header .header-search,
-[data-theme="blue"] header .header-search {
+[data-theme="teal"] header.site-header .header-search,
+[data-theme="blue"] header.site-header .header-search {
   color: var(--fg-page);
 }
-[data-theme="teal"] header .header-search::placeholder,
-[data-theme="blue"] header .header-search::placeholder {
+[data-theme="teal"] header.site-header .header-search::placeholder,
+[data-theme="blue"] header.site-header .header-search::placeholder {
   color: color-mix(in oklab, var(--mut-page) 60%, transparent);
 }
 
 /* ============ 页头浮层（头像下拉、主题菜单） ============
  * 这些面板是 bg-card 的白底，但 DOM 在 <header> 里，会继承页头的白字配色，
  * 结果白底白字、看上去像"白屏"。这里把配色变量还原成正文配色。 */
-[data-theme="teal"] header .popover,
-[data-theme="blue"] header .popover {
+[data-theme="teal"] header.site-header .popover,
+[data-theme="blue"] header.site-header .popover {
   --fg: var(--fg-page);
   --mut: var(--mut-page);
 }
@@ -266,3 +269,45 @@ button, a, summary, select, label {
 button:active, a:active, summary:active, label:active {
   opacity: .82;
 }
+
+/* 自定义表情与原生 emoji 字面的视觉对齐：--emoji-img-size 按 Noto 字体的字面墨迹高度校准 */
+:root { --emoji-img-size: 1.4em; }
+.markdown-body img.custom-emoji { display:inline-block; width:var(--emoji-img-size); height:var(--emoji-img-size); object-fit:contain; vertical-align:middle; margin:0 .1em; }
+/* Discourse only-emoji：整行仅 ≤3 个 emoji 时放大；链接/列表/引用/表格内保持常规 */
+.markdown-body p.emoji-only { font-size:2.5em; line-height:1.15; margin:.45em 0; }
+.markdown-body li p.emoji-only, .markdown-body blockquote p.emoji-only, .markdown-body .md-table p.emoji-only, .markdown-body a .emoji-only { font-size:inherit; margin:0; }
+.spoiler { filter:blur(5px); cursor:pointer; }
+.spoiler:hover,.spoiler:focus { filter:none; }
+
+/* Topic reading surface: all content aligns to the author column. */
+.topic-timeline{max-width:900px;margin:auto}.topic-breadcrumb{display:flex;gap:10px;color:var(--mut);font-size:13px}.topic-title{font-size:24px;font-weight:600;margin:18px 0 6px}.topic-summary{font-size:12px;color:var(--mut);margin-bottom:22px}
+.topic-post{display:grid;grid-template-columns:40px minmax(0,1fr);gap:16px;padding:24px 0;border-top:1px solid var(--bd);scroll-margin-top:80px}.post-column{min-width:0}.post-byline,.post-byline>div,.post-context{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.post-byline{justify-content:space-between;margin-bottom:16px}.post-author{font-weight:600}.post-byline time,.post-context{color:var(--mut);font-size:12px}.reply-target{display:inline-flex;gap:5px;align-items:center}.topic-post .markdown-body{font-size:16px;line-height:1.75}.topic-post:target{background:var(--soft)}
+.reaction-chips{display:flex;flex-wrap:wrap;gap:5px;margin:18px 0 10px}.reaction-chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:3px 9px;border:1px solid var(--bd);background:var(--soft);border-radius:5px;font-size:13px}.reaction-chip[aria-pressed=true]{background:light-dark(#e9eeff,#202759);border-color:light-dark(#6379cd,#4758b2)}.reaction-chip:hover{filter:brightness(1.15)}
+.post-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;flex-wrap:wrap}.post-actions{display:flex;gap:12px;align-items:center;margin-left:auto}.post-icon,.post-text-action{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:36px;min-height:36px;border:0;background:none;color:var(--mut);border-radius:4px;font-size:16px;cursor:pointer;transition:opacity .12s}.post-text-action{font-size:13px}.post-icon:hover,.post-text-action:hover{color:var(--fg);background:var(--soft)}.post-icon.is-liked{color:var(--danger)}.post-status{display:block;color:var(--mut);font-size:12px}.post-more{position:relative}.post-more summary{list-style:none}.post-more-menu{position:absolute;right:0;top:100%;z-index:40;min-width:160px;padding:8px;border:1px solid var(--bd);background:var(--card);box-shadow:0 6px 20px #0003;border-radius:5px}.post-more-menu button{background:none!important;border:0!important;color:var(--fg)!important;display:block;padding:7px 10px;font-size:13px}.emoji-popover{position:fixed;z-index:100;overflow:auto;background:var(--card);border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 30px #0004}.emoji-popover em-emoji-picker{width:100%;--rgb-background:transparent}
+.quote-source,.quote-source>a{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut);margin-bottom:7px}.quote-source>a{width:100%;text-decoration:none!important}.quote-source img{border-radius:50%!important;margin:0!important}.quote-jump{margin-left:auto}.markdown-body blockquote.post-quote{background:color-mix(in srgb,var(--fg) 6%,var(--card));border-left:3px solid var(--mut);padding:9px 12px;margin:14px 0}.markdown-body blockquote.plain-quote{background:none;border-left:3px solid var(--mut);padding:4px 12px}.quote-collapsed{max-height:14em;overflow:hidden}.reply-previews{border-left:1px solid var(--bd);padding:12px 0 0 18px;margin:12px 0 0 12px}.reply-previews>div{margin-bottom:14px}.reply-previews p{font-size:13px}.reply-previews a{font-size:12px;color:var(--link)}.internal-post-card{display:block;border:1px solid var(--bd);padding:12px 16px;margin:12px 0;border-radius:5px}.internal-post-card>span{display:block;font-size:13px;color:var(--mut)}.post-images{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.post-images img{max-height:440px;max-width:100%;object-fit:contain}.post-image-item{position:relative;max-width:100%}.post-image-item .post-image-download{position:absolute;right:8px;bottom:8px;border-radius:4px;background:color-mix(in srgb,var(--card) 85%,transparent);padding:2px 8px;font-size:12px;color:var(--link);backdrop-filter:blur(2px)}
+.composer-tools{display:flex;flex-wrap:wrap;gap:2px 0;align-items:center;padding:4px 8px;border-bottom:1.5px solid var(--bd);margin-bottom:0;flex:none}.composer-tools .post-text-action,.composer-tools .post-icon{min-width:26px;min-height:30px}.composer-tools .tool-group{display:flex;align-items:center;gap:2px;padding:0 5px;border-left:1px solid var(--bd)}.composer-tools .tool-group:first-child{border-left:0;padding-left:0}.composer-header{row-gap:3px}.composer-footer{row-gap:6px}
+.composer-body{display:grid;grid-template-columns:minmax(0,55fr) minmax(0,45fr);gap:10px;height:clamp(420px,60vh,760px)}
+.composer-pane{display:flex;flex-direction:column;min-width:0;min-height:0;border:1px solid var(--bd);border-radius:6px;background:var(--composer-pane)}
+.composer-pane-head{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--bd);font-size:12px;color:var(--mut);flex:none}
+.composer-scroll{flex:1;overflow:auto;min-height:0;padding:10px 12px}
+.composer-editor-text{display:block;width:100%;flex:1;min-height:280px;resize:none;border:0;background:none;padding:12px;font-size:14px;line-height:1.7;color:var(--fg);outline:none}
+.composer-editor-text.composer-dragover{outline:2px dashed var(--tertiary);outline-offset:-3px}
+.composer-preview-empty{color:var(--mut);font-size:13px}
+.composer-body[data-preview="false"]{grid-template-columns:1fr}
+.composer-body[data-preview="false"] .composer-preview{display:none}
+.composer-queue{display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid var(--bd);padding:6px 10px;font-size:12px;color:var(--mut)}
+.composer-queue-item{display:inline-flex;max-width:100%;align-items:center;gap:6px;background:var(--soft);border:1px solid var(--bd);border-radius:4px;padding:2px 8px;color:var(--fg)}
+.composer-queue-item .bar{height:3px;border-radius:2px;background:var(--bd);overflow:hidden}
+.upload-pending{display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--bd);background:var(--soft);color:var(--mut);border-radius:4px;padding:1px 8px;font-size:12px;vertical-align:middle}
+@media(max-width:767px){
+  .composer-body{grid-template-columns:1fr;height:auto;min-height:320px}
+  .composer-preview{display:none}
+  .composer-body[data-mobile="true"] .composer-editor{display:none}
+  .composer-body[data-mobile="true"] .composer-preview{display:flex}
+  .composer-editor-text{min-height:200px}
+}
+@media(max-width:600px){.topic-post{gap:10px;grid-template-columns:36px minmax(0,1fr);padding:20px 0}.topic-post>div:first-child{max-width:36px}.post-actions{gap:4px;flex-wrap:wrap}.post-icon,.post-text-action{min-height:44px;min-width:40px}.topic-title{font-size:21px}.post-byline{gap:5px}.reaction-chip{min-height:36px}.emoji-popover{max-width:calc(100vw - 16px)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*{scroll-behavior:auto!important}}
+.source-avatar{display:inline-grid;place-items:center;width:18px;height:18px;flex:none;border-radius:50%;background:var(--soft);color:var(--mut);font-size:11px}.topic-post>.rounded-md{border-radius:50%}.topic-timeline .emoji-popover{color-scheme:inherit}
+.post-author,.post-context{overflow-wrap:anywhere;min-width:0}.post-byline>div{min-width:0}.post-icon:disabled,.post-text-action:disabled{opacity:.45;cursor:default}
+.post-icon:focus-visible,.post-text-action:focus-visible,.reaction-chip:focus-visible{outline:2px solid var(--tertiary);outline-offset:2px}
